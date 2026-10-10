@@ -1,0 +1,6 @@
+{
+  "name": "DigitaMente",
+  "description": "Plataforma avançada de teste de digitação e estudo em português com textos informativos, métricas precisas e geração de conteúdo por IA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -167,7 +167,7 @@ export const Header: React.FC<HeaderProps> = ({
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
             title={settings.theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
           >
-            {settings.theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
+            {settings.theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
           {/* Idioma (apenas ícone de globo) */}

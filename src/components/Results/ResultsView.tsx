@@ -240,15 +240,15 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
           <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={result.wpmTimeline} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                <XAxis dataKey="second" unit="s" stroke="#888888" fontSize={11} tickLine={false} />
-                <YAxis stroke="#888888" fontSize={11} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" opacity={0.15} stroke="var(--line)" />
+                <XAxis dataKey="second" unit="s" stroke="var(--ink-muted)" fontSize={11} tickLine={false} />
+                <YAxis stroke="var(--ink-muted)" fontSize={11} tickLine={false} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    backgroundColor: 'var(--panel)',
                     borderRadius: '8px',
-                    border: 'none',
-                    color: '#fff',
+                    border: '1px solid var(--line)',
+                    color: 'var(--ink)',
                     fontSize: '12px',
                   }}
                 />
@@ -306,7 +306,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
       )}
 
       {/* SEÇÃO FIXAÇÃO DE CONTEÚDO (Modo Estudo) [P1] */}
-      {(result.isStudyMode || studyText) && (
+      {Boolean(result.isStudyMode && (keyPoints.length > 0 || quizQuestions.length > 0)) && (
         <div className="bg-gradient-to-b from-blue-50/50 to-white dark:from-slate-900 dark:to-slate-900 border border-blue-200 dark:border-blue-900/60 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
           
           <div className="flex items-center gap-3">

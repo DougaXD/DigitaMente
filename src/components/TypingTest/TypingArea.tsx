@@ -149,7 +149,8 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
     }
   }, [settings.fontFamily]);
 
-  const lineHeightPx = Math.round(settings.fontSize * settings.lineHeight);
+  const effectiveLineHeight = settings.lineHeight ? Math.max(settings.lineHeight, 2.0) : 2.0;
+  const lineHeightPx = Math.round(settings.fontSize * effectiveLineHeight);
   const PADDING_VERTICAL_PX = 24;
   const viewportHeightPx = lineHeightPx * settings.visibleLines;
   const boxHeightPx = viewportHeightPx + 2 * PADDING_VERTICAL_PX;
@@ -239,14 +240,54 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
     const currentIndex = userInput.length;
     const targetEl = charRefs.current[currentIndex] || charRefs.current[currentIndex - 1];
 
+    // Medição das métricas reais da fonte via canvas
+    const ctx = getSharedCanvasContext();
+    let fontAscent = settings.fontSize * 0.8;
+    let fontDescent = settings.fontSize * 0.22;
+    if (ctx) {
+      ctx.font = `normal 400 ${settings.fontSize}px ${fontFamilyString}`;
+      const tm = ctx.measureText('Mgyjpq');
+      if (typeof tm.fontBoundingBoxAscent === 'number') {
+        fontAscent = tm.fontBoundingBoxAscent;
+      } else if (typeof tm.actualBoundingBoxAscent === 'number') {
+        fontAscent = tm.actualBoundingBoxAscent;
+      }
+      if (typeof tm.fontBoundingBoxDescent === 'number') {
+        fontDescent = tm.fontBoundingBoxDescent;
+      } else if (typeof tm.actualBoundingBoxDescent === 'number') {
+        fontDescent = tm.actualBoundingBoxDescent;
+      }
+    }
+
     if (!targetEl) {
       const firstEl = charRefs.current[0];
       if (firstEl) {
+        const firstLeft = firstEl.offsetLeft;
+        const firstTop = firstEl.offsetTop;
+        const firstWidth = firstEl.offsetWidth || 14;
+        const baseline = firstTop + Math.round((lineHeightPx + fontAscent - fontDescent) / 2);
+
+        let cWidth = firstWidth;
+        let cHeight = lineHeightPx;
+        let cLeft = firstLeft;
+        let cTop = firstTop;
+
+        if (settings.caretStyle === 'underline') {
+          cWidth = Math.round(settings.fontSize * 0.6);
+          cHeight = 3;
+          cLeft = firstLeft + Math.round((firstWidth - cWidth) / 2);
+          cTop = baseline + Math.round(fontDescent) + 6;
+        } else if (settings.caretStyle === 'line') {
+          cWidth = 2;
+          cHeight = Math.round(settings.fontSize * 1.1);
+          cTop = firstTop + Math.round((lineHeightPx - cHeight) / 2);
+        }
+
         setCaretPos({
-          left: firstEl.offsetLeft,
-          top: firstEl.offsetTop,
-          width: firstEl.offsetWidth || 12,
-          height: lineHeightPx,
+          left: cLeft,
+          top: cTop,
+          width: cWidth,
+          height: cHeight,
         });
         setScrollOffsetY(0);
       }
@@ -259,24 +300,37 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
       ? (currentSpan.offsetLeft + currentSpan.offsetWidth) 
       : currentSpan.offsetLeft;
     const top = currentSpan.offsetTop;
-    const width = isPastEnd ? 12 : currentSpan.offsetWidth || 14;
+    const width = isPastEnd ? 12 : (currentSpan.offsetWidth || 14);
+
+    // Linha de base da fonte dentro da linha com altura lineHeightPx
+    const baseline = top + Math.round((lineHeightPx + fontAscent - fontDescent) / 2);
 
     let height = lineHeightPx;
     let computedTop = top;
+    let computedLeft = left;
+    let computedWidth = width;
 
     // Ajuste fino de altura e posição vertical por estilo de cursor
     if (settings.caretStyle === 'underline') {
+      // Largura FIXA de 0.6em (cerca de 17px com fonte 28px), espessura 3px, centralizado na célula do caractere atual
+      const fixedWidth = Math.round(settings.fontSize * 0.6);
+      computedWidth = fixedWidth;
       height = 3;
-      // Posiciona o traço horizontal ~4px abaixo da linha de base da fonte
-      const baselineOffset = Math.round(settings.fontSize * 1.32);
-      computedTop = top + baselineOffset;
+      computedLeft = isPastEnd ? left : left + Math.round((width - fixedWidth) / 2);
+      // Topo do cursor = linha de base + descida da fonte (fontBoundingBoxDescent) + 6px
+      computedTop = baseline + Math.round(fontDescent) + 6;
     } else if (settings.caretStyle === 'line') {
-      // Reduz a barra vertical para ~1.1x o tamanho da fonte (centralizada verticalmente na linha)
+      computedWidth = 2;
       height = Math.round(settings.fontSize * 1.1);
       computedTop = top + Math.round((lineHeightPx - height) / 2);
+    } else {
+      // block
+      computedWidth = width;
+      height = lineHeightPx;
+      computedTop = top;
     }
 
-    setCaretPos({ left, top: computedTop, width, height });
+    setCaretPos({ left: computedLeft, top: computedTop, width: computedWidth, height });
 
     // Mantém a linha atual sempre no topo do viewport
     const firstCharEl = charRefs.current[0];
@@ -284,7 +338,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
     const currentLineDelta = Math.max(0, top - baseTop);
 
     setScrollOffsetY(currentLineDelta);
-  }, [userInput.length, targetText.length, lineHeightPx, settings.caretStyle, settings.fontSize]);
+  }, [userInput.length, targetText.length, lineHeightPx, settings.caretStyle, settings.fontSize, fontFamilyString]);
 
   useEffect(() => {
     updateCaretAndScroll();
@@ -293,8 +347,9 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
   // Estilo do cursor
   const getCaretClass = () => {
     // z-10 fica abaixo da camada de letras fantasma (z-20)
-    const base = 'absolute pointer-events-none z-10';
-    const smooth = settings.caretSmoothness ? 'transition-all duration-100 ease-out' : '';
+    const base = 'absolute pointer-events-none z-10 top-0 left-0';
+    // Mantenha a transição suave de posição (transform), mas NÃO anime a largura
+    const smooth = settings.caretSmoothness ? 'transition-[transform] duration-100 ease-out' : '';
     const accentBorder = ACCENT_COLOR_MAP[settings.accentColor || 'blue']?.caret || 'border-blue-600 dark:border-blue-400';
     const accentBg = ACCENT_COLOR_MAP[settings.accentColor || 'blue']?.bg || 'bg-blue-600 dark:bg-blue-400';
 
@@ -413,9 +468,8 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
               <div
                 className={getCaretClass()}
                 style={{
-                  left: `${caretPos.left}px`,
-                  top: `${caretPos.top}px`,
-                  width: settings.caretStyle === 'line' ? '2px' : `${caretPos.width}px`,
+                  transform: `translate3d(${caretPos.left}px, ${caretPos.top}px, 0)`,
+                  width: `${caretPos.width}px`,
                   height: `${caretPos.height}px`,
                 }}
               />

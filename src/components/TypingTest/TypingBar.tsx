@@ -37,6 +37,8 @@ interface TypingBarProps {
   onOpenCustomModal?: () => void;
   settings: Settings;
   onUpdateSettings: (newSettings: Partial<Settings>) => void;
+  isFaded?: boolean;
+  children?: React.ReactNode;
 }
 
 const TIME_OPTIONS = [15, 30, 60, 120, 180, 300, 600];
@@ -61,6 +63,8 @@ export const TypingBar: React.FC<TypingBarProps> = ({
   onOpenCustomModal,
   settings,
   onUpdateSettings,
+  isFaded = false,
+  children,
 }) => {
   // Popovers abertos
   const [isDurationOpen, setIsDurationOpen] = useState(false);
@@ -110,10 +114,10 @@ export const TypingBar: React.FC<TypingBarProps> = ({
   };
 
   return (
-    <div className="w-full flex items-center justify-between text-sm text-slate-700 dark:text-slate-300 select-none mb-3">
+    <div className="w-full flex items-center justify-between text-sm text-slate-700 dark:text-slate-300 select-none mb-3 min-h-[40px] flex-wrap sm:flex-nowrap gap-y-2">
       
-      {/* Grupo Esquerdo: Tipo, Duração e Área (Botões de 40px de altura com 10px de espaçamento) */}
-      <div className="flex items-center gap-[10px] flex-wrap">
+      {/* Grupo Esquerdo: Tipo, Duração e Área (Botões de 40px de altura com 10px de espaçamento, esmaece no foco) */}
+      <div className={`flex items-center gap-[10px] flex-wrap transition-opacity duration-300 ${isFaded ? 'opacity-10 pointer-events-none' : 'opacity-100'}`}>
         
         {/* Seletor Tipo (Menu suspenso com aparência de botão de 40px) */}
         <div className="relative">
@@ -327,24 +331,46 @@ export const TypingBar: React.FC<TypingBarProps> = ({
 
       </div>
 
-      {/* Grupo Direito: Modo Estudo e Opções Rápidas (Alinhados à direita, altura 40px) */}
-      <div className="flex items-center gap-[10px]">
+      {/* Grupo Direito: Modo Estudo, Opções Rápidas e Contador (Alinhados à direita, altura 40px) */}
+      <div className="flex items-center justify-end shrink-0 ml-auto sm:ml-0">
         
-        {/* Alternador Modo Estudo (Botão estilizado com altura 40px) */}
-        <button
-          onClick={onToggleStudyMode}
-          aria-pressed={isStudyMode}
-          className={`h-[40px] flex items-center gap-2 px-[14px] rounded-[10px] border text-sm font-medium transition-colors cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-blue-500 outline-none ${
-            isStudyMode
-              ? 'bg-blue-600/15 text-blue-600 dark:text-blue-400 border-blue-500/30 font-semibold'
-              : 'bg-white dark:bg-white/[0.05] hover:bg-slate-50 dark:hover:bg-white/[0.08] border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 text-slate-700 dark:text-slate-300'
-          }`}
-          title={isStudyMode ? 'Modo Estudo ativado (quiz e pontos-chave)' : 'Ativar Modo Estudo'}
-        >
-          <GraduationCap className="w-4 h-4" />
-          <span className="hidden sm:inline">Estudo</span>
-          <span className={`w-1.5 h-1.5 rounded-full ${isStudyMode ? 'bg-blue-600 dark:bg-blue-400' : 'bg-transparent'}`} />
-        </button>
+        {/* Subgrupo Botões: Estudo e Opções Rápidas (esmaecem no modo foco) */}
+        <div className={`flex items-center gap-[10px] transition-opacity duration-300 ${isFaded ? 'opacity-10 pointer-events-none' : 'opacity-100'}`}>
+          
+          {/* Alternador Modo Estudo (Botão estilizado com altura 40px) */}
+        {(() => {
+          const isLibrary = testType === 'library';
+          const isActive = isLibrary && isStudyMode;
+          const buttonTitle = !isLibrary
+            ? 'Disponível para textos da biblioteca'
+            : isActive
+            ? 'Modo Estudo ativado (quiz e pontos-chave)'
+            : 'Ativar Modo Estudo';
+
+          let buttonClasses = 'h-[40px] flex items-center gap-2 px-[14px] rounded-[10px] border text-sm font-medium transition-colors shadow-2xs focus-visible:ring-2 focus-visible:ring-blue-500 outline-none ';
+
+          if (!isLibrary) {
+            buttonClasses += 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500';
+          } else if (isActive) {
+            buttonClasses += 'cursor-pointer bg-blue-600/15 text-blue-600 dark:text-blue-400 border-blue-500/30 font-semibold';
+          } else {
+            buttonClasses += 'cursor-pointer bg-white dark:bg-white/[0.05] hover:bg-slate-50 dark:hover:bg-white/[0.08] border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 text-slate-700 dark:text-slate-300';
+          }
+
+          return (
+            <button
+              onClick={isLibrary ? onToggleStudyMode : undefined}
+              disabled={!isLibrary}
+              aria-pressed={isActive}
+              className={buttonClasses}
+              title={buttonTitle}
+            >
+              <GraduationCap className="w-4 h-4" />
+              <span className="hidden sm:inline">Estudo</span>
+              <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-blue-600 dark:bg-blue-400' : 'bg-transparent'}`} />
+            </button>
+          );
+        })()}
 
         {/* Ícone Opções Rápidas (Botão quadrado 40x40px) */}
         <div className="relative" ref={quickOptionsRef}>
@@ -442,6 +468,15 @@ export const TypingBar: React.FC<TypingBarProps> = ({
             </div>
           )}
         </div>
+
+        </div>
+
+        {/* Contador / Estatísticas ao vivo (16px de espaço do grupo de botões, centralizado verticalmente, sem esmaecer) */}
+        {children && (
+          <div className="ml-4 flex items-center shrink-0">
+            {children}
+          </div>
+        )}
 
       </div>
 

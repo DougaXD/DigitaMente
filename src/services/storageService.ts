@@ -54,7 +54,7 @@ export const DEFAULT_SETTINGS: Settings = {
   fontFamily: 'sans',
   fontSize: 28,            // Padrão 28px
   letterSpacing: 0.5,
-  lineHeight: 1.8,
+  lineHeight: 2.0,
   visibleLines: 3,
   caretStyle: 'underline',
   caretSmoothness: true,

@@ -1,25 +1,122 @@
 @import "tailwindcss";
 
-:root {
-  /* Superfície da caixa de texto com relevo saltado */
-  --surface-bg: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  --surface-shadow: 0 12px 28px rgba(15, 23, 42, 0.10), 0 2px 6px rgba(15, 23, 42, 0.07), inset 0 1px 0 #ffffff, inset 0 -2px 3px rgba(15, 23, 42, 0.05);
-  --surface-shadow-focus: 0 14px 32px rgba(15, 23, 42, 0.13), 0 3px 8px rgba(15, 23, 42, 0.08), inset 0 1px 0 #ffffff, inset 0 -2px 3px rgba(15, 23, 42, 0.05);
-  --surface-border: rgba(15, 23, 42, 0.06);
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+@theme inline {
+  --color-app: var(--app);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-accent: var(--accent);
 }
 
-.dark {
-  --surface-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%);
-  --surface-shadow: 0 14px 28px rgba(0, 0, 0, 0.55), 0 3px 6px rgba(0, 0, 0, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -2px 4px rgba(0, 0, 0, 0.25);
-  --surface-shadow-focus: 0 16px 32px rgba(0, 0, 0, 0.65), 0 4px 8px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -2px 4px rgba(0, 0, 0, 0.25);
-  --surface-border: rgba(255, 255, 255, 0.05);
+/* ==========================================================================
+   TOKENS DE TEMA E SUPERFÍCIE (TEMA CLARO E TEMA ESCURO)
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* Tokens semânticos universais (Tema Claro) */
+  --app: #eef2f7;
+  --panel: #ffffff;
+  --panel-2: #f8fafc;
+  --line: #d6dde8;
+  --ink: #0f172a;
+  --ink-muted: #64748b;
+  --ink-faint: #94a3b8;
+  --accent: #2563eb;
+
+  /* Tokens do App */
+  --bg-page: var(--app);
+  --bg-surface: var(--panel);
+  --bg-header: var(--panel);
+  --text-main: var(--ink);
+  --text-muted: var(--ink-muted);
+  --border-subtle: var(--line);
+  --accent-blue: var(--accent);
+
+  /* Caracteres de digitação */
+  --char-pending: #64748b;
+  --char-correct: #059669;
+  --char-error: #e11d48;
+
+  /* Superfície da caixa de texto: Relevo suave sem bordas, adaptado ao tema claro */
+  --surface-bg: linear-gradient(180deg, #ffffff 0%, #f4f7fb 100%);
+  --surface-shadow: 0 22px 44px -14px rgba(15, 23, 42, 0.20), 0 8px 18px rgba(15, 23, 42, 0.08);
+  --surface-shadow-focus: 0 26px 48px -14px rgba(15, 23, 42, 0.24), 0 10px 22px rgba(15, 23, 42, 0.10);
+
+  /* Tamanho configurável do contador de teste */
+  --counter-size: 22px;
 }
+
+.dark,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Tokens semânticos universais (Tema Escuro) */
+  --app: #020617;
+  --panel: #0f172a;
+  --panel-2: #1e293b;
+  --line: #1e293b;
+  --ink: #f8fafc;
+  --ink-muted: #94a3b8;
+  --ink-faint: #64748b;
+  --accent: #3b82f6;
+
+  /* Tokens do App */
+  --bg-page: var(--app);
+  --bg-surface: var(--panel);
+  --bg-header: var(--app);
+  --text-main: var(--ink);
+  --text-muted: var(--ink-muted);
+  --border-subtle: var(--line);
+  --accent-blue: var(--accent);
+
+  /* Caracteres de digitação */
+  --char-pending: #64748b;
+  --char-correct: #34d399;
+  --char-error: #f43f5e;
+
+  /* Superfície da caixa de texto: Relevo suave sem bordas, adaptado ao tema escuro */
+  --surface-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.02) 100%);
+  --surface-shadow: 0 22px 44px -10px rgba(0, 0, 0, 0.65), 0 8px 18px rgba(0, 0, 0, 0.35);
+  --surface-shadow-focus: 0 26px 50px -10px rgba(0, 0, 0, 0.75), 0 10px 22px rgba(0, 0, 0, 0.42);
+}
+
+body,
+#root {
+  background-color: var(--app);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+.test-counter {
+  font-size: var(--counter-size);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--text-main);
+  min-width: 4ch;
+  text-align: right;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* ==========================================================================
+   CAIXA DE TEXTO COM RELEVO SUAVE (SEM NENHUMA BORDA OU CONTORNO)
+   ========================================================================== */
 
 .typing-surface {
   background: var(--surface-bg);
   box-shadow: var(--surface-shadow);
-  border: 1px solid var(--surface-border);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  border: 0 !important;
+  outline: 0 !important;
+  transition: box-shadow 0.25s ease;
 }
 
 .typing-surface.is-focused {

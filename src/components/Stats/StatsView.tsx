@@ -183,15 +183,15 @@ export const StatsView: React.FC<StatsViewProps> = ({ onStartNewTest }) => {
             <div className="h-60 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                  <XAxis dataKey="index" stroke="#888888" fontSize={11} tickLine={false} />
-                  <YAxis stroke="#888888" fontSize={11} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} stroke="var(--line)" />
+                  <XAxis dataKey="index" stroke="var(--ink-muted)" fontSize={11} tickLine={false} />
+                  <YAxis stroke="var(--ink-muted)" fontSize={11} tickLine={false} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                      backgroundColor: 'var(--panel)',
                       borderRadius: '8px',
-                      border: 'none',
-                      color: '#fff',
+                      border: '1px solid var(--line)',
+                      color: 'var(--ink)',
                       fontSize: '12px',
                     }}
                   />
@@ -217,15 +217,15 @@ export const StatsView: React.FC<StatsViewProps> = ({ onStartNewTest }) => {
             <div className="h-60 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                  <XAxis dataKey="index" stroke="#888888" fontSize={11} tickLine={false} />
-                  <YAxis domain={[70, 100]} stroke="#888888" fontSize={11} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} stroke="var(--line)" />
+                  <XAxis dataKey="index" stroke="var(--ink-muted)" fontSize={11} tickLine={false} />
+                  <YAxis domain={[70, 100]} stroke="var(--ink-muted)" fontSize={11} tickLine={false} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                      backgroundColor: 'var(--panel)',
                       borderRadius: '8px',
-                      border: 'none',
-                      color: '#fff',
+                      border: '1px solid var(--line)',
+                      color: 'var(--ink)',
                       fontSize: '12px',
                     }}
                   />

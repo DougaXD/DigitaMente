@@ -23,21 +23,35 @@ export function useSettings() {
     settings.errorSoundProfile,
   ]);
 
-  // Aplica classe de tema ao documento HTML
+  // Aplica classe de tema e data-theme ao documento HTML
   useEffect(() => {
     const root = document.documentElement;
-    if (settings.theme === 'dark') {
-      root.classList.add('dark');
-    } else if (settings.theme === 'light') {
-      root.classList.remove('dark');
-    } else {
-      // auto
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (prefersDark) {
+
+    const applyTheme = (isDark: boolean) => {
+      if (isDark) {
         root.classList.add('dark');
+        root.setAttribute('data-theme', 'dark');
       } else {
         root.classList.remove('dark');
+        root.setAttribute('data-theme', 'light');
       }
+    };
+
+    if (settings.theme === 'dark') {
+      applyTheme(true);
+    } else if (settings.theme === 'light') {
+      applyTheme(false);
+    } else {
+      // auto
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      applyTheme(mediaQuery.matches);
+
+      const handleChange = (e: MediaQueryListEvent) => {
+        applyTheme(e.matches);
+      };
+
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
     }
   }, [settings.theme]);
 

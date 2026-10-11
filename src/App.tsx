@@ -56,7 +56,7 @@ export default function App() {
   const [wordCount, setWordCount] = useState<number>(settings.defaultWordCount);
   const [pageCount, setPageCount] = useState<number>(settings.defaultPageCount);
   const [category, setCategory] = useState<TextCategory | 'Aleatório'>(settings.defaultCategory);
-  const [isStudyMode, setIsStudyMode] = useState<boolean>(settings.studyMode);
+  const isStudyMode = testType === 'library' && settings.studyMode;
 
   // Textos atuais
   const [currentStudyText, setCurrentStudyText] = useState<StudyText | null>(null);
@@ -141,6 +141,9 @@ export default function App() {
     );
     setRawTargetText(target);
     setCurrentStudyText(studyObj);
+    if (testType === 'library' && settings.studyMode && settings.studyPriorReading && studyObj) {
+      setIsPriorReadingOpen(true);
+    }
   }, []);
 
   // Callback de conclusão do teste
@@ -183,8 +186,12 @@ export default function App() {
   const startNewText = useCallback((specificStudyText?: StudyText) => {
     setLatestResult(null);
     setIsNewRecord(false);
+    const effectiveType = specificStudyText ? 'library' : testType;
+    if (specificStudyText && testType !== 'library') {
+      setTestType('library');
+    }
     const { target, studyObj } = prepareText(
-      specificStudyText ? 'library' : testType,
+      effectiveType,
       category,
       durationMode,
       wordCount,
@@ -195,10 +202,10 @@ export default function App() {
     setCurrentStudyText(studyObj);
     engine.restartTest();
 
-    if (specificStudyText && isStudyMode && settings.studyPriorReading) {
+    if ((specificStudyText || effectiveType === 'library') && settings.studyMode && settings.studyPriorReading && studyObj) {
       setIsPriorReadingOpen(true);
     }
-  }, [prepareText, testType, category, durationMode, wordCount, pageCount, isStudyMode, settings.studyPriorReading, engine]);
+  }, [prepareText, testType, category, durationMode, wordCount, pageCount, settings.studyMode, settings.studyPriorReading, engine]);
 
   // Reiniciar mesmo texto
   const handleRetrySameText = useCallback(() => {
@@ -351,11 +358,23 @@ export default function App() {
     setRawTargetText(target);
     setCurrentStudyText(studyObj);
     engine.restartTest();
+    if (newType === 'library' && settings.studyMode && settings.studyPriorReading && studyObj) {
+      setIsPriorReadingOpen(true);
+    }
     setTimeout(() => {
       engine.textareaRef.current?.focus({ preventScroll: true });
       engine.setIsFocused(true);
     }, 0);
   };
+
+  const handleToggleStudyMode = useCallback(() => {
+    if (testType !== 'library') return;
+    const nextStudyMode = !settings.studyMode;
+    updateSettings({ studyMode: nextStudyMode });
+    if (nextStudyMode && settings.studyPriorReading && currentStudyText && !engine.isRunning) {
+      setIsPriorReadingOpen(true);
+    }
+  }, [testType, settings.studyMode, settings.studyPriorReading, updateSettings, currentStudyText, engine.isRunning]);
 
   const handleChangeDurationMode = (newMode: TestDurationMode) => {
     setDurationMode(newMode);
@@ -453,7 +472,7 @@ export default function App() {
   const isUiFaded = settings.hideUiOnTyping && engine.isRunning && !engine.isFinished && !mouseAwakeOnTyping;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors">
+    <div className="min-h-screen flex flex-col bg-app text-ink transition-colors">
       
       {/* Cabeçalho */}
       <Header
@@ -505,51 +524,49 @@ export default function App() {
                 style={{ paddingBottom: '14vh' }}
               >
                 
-                {/* Barra de Seleção de Tipo, Duração e Categoria [P0] (esmaece no modo foco) */}
-                <div className={`transition-opacity duration-300 ${isUiFaded ? 'opacity-10 pointer-events-none' : 'opacity-100'}`}>
-                  <TypingBar
-                    settings={settings}
-                    onUpdateSettings={updateSettings}
-                    testType={testType}
-                    onChangeTestType={handleChangeTestType}
-                    durationMode={durationMode}
-                    onChangeDurationMode={handleChangeDurationMode}
-                    timeSeconds={timeSeconds}
-                    onChangeTimeSeconds={(sec) => {
-                      setTimeSeconds(sec);
-                      engine.restartTest();
-                    }}
-                    wordCount={wordCount}
-                    onChangeWordCount={(w) => {
-                      setWordCount(w);
-                      startNewText();
-                    }}
-                    pageCount={pageCount}
-                    onChangePageCount={(p) => {
-                      setPageCount(p);
-                      startNewText();
-                    }}
-                    category={category}
-                    onChangeCategory={handleChangeCategory}
-                    isStudyMode={isStudyMode}
-                    onToggleStudyMode={() => setIsStudyMode(!isStudyMode)}
-                    onOpenCustomModal={() => setIsCustomModalOpen(true)}
-                  />
-                </div>
-
-                {/* Mostradores Ao Vivo (WPM, Precisão, Tempo/Progresso) [P0] */}
-                <LiveStats
+                {/* Linha Única Acima da Caixa (estilo Typing Core, 40px, a 12px da caixa) */}
+                <TypingBar
                   settings={settings}
-                  liveWpm={engine.liveWpm}
-                  liveAccuracy={engine.liveAccuracy}
-                  elapsedSeconds={engine.elapsedSeconds}
-                  timeLimitSeconds={timeSeconds}
+                  onUpdateSettings={updateSettings}
+                  testType={testType}
+                  onChangeTestType={handleChangeTestType}
                   durationMode={durationMode}
-                  typedWords={engine.userInput.trim().split(/\s+/).filter(Boolean).length}
-                  wordLimit={wordCount}
-                  totalCharsTyped={engine.userInput.length}
-                  targetTotalChars={rawTargetText.length}
-                />
+                  onChangeDurationMode={handleChangeDurationMode}
+                  timeSeconds={timeSeconds}
+                  onChangeTimeSeconds={(sec) => {
+                    setTimeSeconds(sec);
+                    engine.restartTest();
+                  }}
+                  wordCount={wordCount}
+                  onChangeWordCount={(w) => {
+                    setWordCount(w);
+                    startNewText();
+                  }}
+                  pageCount={pageCount}
+                  onChangePageCount={(p) => {
+                    setPageCount(p);
+                    startNewText();
+                  }}
+                  category={category}
+                  onChangeCategory={handleChangeCategory}
+                  isStudyMode={isStudyMode}
+                  onToggleStudyMode={handleToggleStudyMode}
+                  onOpenCustomModal={() => setIsCustomModalOpen(true)}
+                  isFaded={isUiFaded}
+                >
+                  <LiveStats
+                    settings={settings}
+                    liveWpm={engine.liveWpm}
+                    liveAccuracy={engine.liveAccuracy}
+                    elapsedSeconds={engine.elapsedSeconds}
+                    timeLimitSeconds={timeSeconds}
+                    durationMode={durationMode}
+                    typedWords={engine.userInput.trim().split(/\s+/).filter(Boolean).length}
+                    wordLimit={wordCount}
+                    totalCharsTyped={engine.userInput.length}
+                    targetTotalChars={rawTargetText.length}
+                  />
+                </TypingBar>
 
                 {/* Área de Digitação Principal [P0] */}
                 <TypingArea

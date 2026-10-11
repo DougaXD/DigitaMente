@@ -29,9 +29,8 @@ export const LiveStats: React.FC<LiveStatsProps> = ({
 }) => {
   const isAnyActive = settings.showLiveWpm || settings.showLiveAccuracy || settings.showLiveTimer;
 
-  // Se nada estiver ligado, mantém um espaçador fixo de ~44 px para a caixa nunca se mover
   if (!isAnyActive) {
-    return <div className="h-[44px] mb-2 select-none pointer-events-none" aria-hidden="true" />;
+    return null;
   }
 
   // Calcula exibição do tempo ou progresso
@@ -46,26 +45,26 @@ export const LiveStats: React.FC<LiveStatsProps> = ({
   }
 
   return (
-    <div className="w-full flex items-center justify-end gap-6 h-[44px] mb-2 tabular-nums select-none">
-      {/* WPM Ao Vivo (se ligado, menor 20px) */}
+    <div className="flex items-center gap-3.5 select-none shrink-0 tabular-nums">
+      {/* WPM Ao Vivo (texto simples de 16px) */}
       {settings.showLiveWpm && (
-        <span className="flex items-baseline gap-1.5 text-[20px] font-bold text-slate-700 dark:text-slate-200">
-          <span className="text-[12px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">WPM</span>
-          <span>{liveWpm}</span>
+        <span className="flex items-baseline gap-1 text-[16px] text-slate-600 dark:text-slate-400">
+          <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">WPM</span>
+          <span className="font-semibold text-slate-800 dark:text-slate-200">{liveWpm}</span>
         </span>
       )}
 
-      {/* Precisão Ao Vivo (se ligada, menor 20px) */}
+      {/* Precisão Ao Vivo (texto simples de 16px) */}
       {settings.showLiveAccuracy && (
-        <span className="flex items-baseline gap-1.5 text-[20px] font-bold text-slate-700 dark:text-slate-200">
-          <span className="text-[12px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">Precisão</span>
-          <span>{liveAccuracy}%</span>
+        <span className="flex items-baseline gap-1 text-[16px] text-slate-600 dark:text-slate-400">
+          <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">Acc</span>
+          <span className="font-semibold text-slate-800 dark:text-slate-200">{liveAccuracy}%</span>
         </span>
       )}
 
-      {/* Contador de tempo / progresso: 32px, font-weight 700, alto contraste (7:1) */}
+      {/* Contador menor: .test-counter (--counter-size: 22px, font-weight 600, tabular-nums, cor principal) */}
       {settings.showLiveTimer && (
-        <span className="font-mono text-[32px] font-bold tracking-tight text-blue-700 dark:text-blue-300">
+        <span className="test-counter">
           {progressDisplay}
         </span>
       )}

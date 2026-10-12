@@ -200,7 +200,6 @@ export const ptBR = {
       typing: 'Digitação & Regras',
       feedback: 'Feedback Sonoro & Visual',
       appearance: 'Aparência & Tipografia',
-      presets: 'Predefinições Rápidas',
       shortcuts: 'Atalhos de Teclado',
     },
     errorBehavior: {
@@ -252,14 +251,6 @@ export const ptBR = {
       studyMode: 'Ativar Modo Estudo por padrão',
       studyPriorReading: 'Exibir leitura prévia antes de digitar',
       virtualKeyboard: 'Teclado virtual na tela',
-    },
-    presets: {
-      typingCom: 'Estilo Typing.com',
-      typingComDesc: 'Sons ativados, letra errada visível, 3 linhas.',
-      typingCore: 'Estilo Typing Core',
-      typingCoreDesc: 'Visual minimalista, sem sons, animações leves e foco.',
-      totalFocus: 'Foco Total',
-      totalFocusDesc: 'Oculta contadores ao vivo durante a digitação.',
     },
     shortcutsList: [
       { key: 'Tab → Enter', desc: 'Sorteia ou inicia um novo texto' },

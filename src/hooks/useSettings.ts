@@ -64,49 +64,6 @@ export function useSettings() {
     });
   }, []);
 
-  // Predefinição Typing.com
-  const applyTypingComPreset = useCallback(() => {
-    updateSettings({
-      soundEnabled: true,
-      errorSound: true,
-      keySound: true,
-      completionSound: true,
-      showWrongLetter: true,
-      wrongLetterStyle: 'above',
-      visibleLines: 3,
-      caretStyle: 'line',
-      errorBehavior: 'free',
-    });
-  }, [updateSettings]);
-
-  // Predefinição Typing Core
-  const applyTypingCorePreset = useCallback(() => {
-    updateSettings({
-      soundEnabled: false,
-      errorSound: false,
-      keySound: false,
-      completionSound: false,
-      showWrongLetter: true,
-      wrongLetterStyle: 'above',
-      visibleLines: 3,
-      caretStyle: 'line',
-      caretSmoothness: true,
-      errorBehavior: 'free',
-      theme: 'dark',
-    });
-  }, [updateSettings]);
-
-  // Predefinição Foco Total
-  const applyTotalFocusPreset = useCallback(() => {
-    updateSettings({
-      showLiveWpm: false,
-      showLiveAccuracy: false,
-      showLiveTimer: false,
-      errorShake: false,
-      visibleLines: 3,
-    });
-  }, [updateSettings]);
-
   // Restaurar padrão
   const resetToDefaults = useCallback(() => {
     const defaults = storageService.resetSettings();
@@ -116,9 +73,6 @@ export function useSettings() {
   return {
     settings,
     updateSettings,
-    applyTypingComPreset,
-    applyTypingCorePreset,
-    applyTotalFocusPreset,
     resetToDefaults,
   };
 }

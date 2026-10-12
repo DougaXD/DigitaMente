@@ -35,9 +35,6 @@ interface SettingsModalProps {
   settings: Settings;
   onUpdateSettings: (newSettings: Partial<Settings>) => void;
   onResetDefaults: () => void;
-  onApplyTypingCom: () => void;
-  onApplyTypingCore: () => void;
-  onApplyTotalFocus: () => void;
   onClose?: () => void;
 }
 
@@ -45,9 +42,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   settings,
   onUpdateSettings,
   onResetDefaults,
-  onApplyTypingCom,
-  onApplyTypingCore,
-  onApplyTotalFocus,
   onClose,
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -186,52 +180,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             />
           </span>{' '}
           <span className="text-slate-400">primeiro passo para o conhecimento verdadeiro.</span>
-        </div>
-      </div>
-
-      {/* Predefinições Rápidas de Um Clique */}
-      <div className="space-y-3">
-        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-          {t.settings.sections.presets}
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          
-          <button
-            onClick={onApplyTypingCom}
-            className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 text-left transition-all shadow-2xs group cursor-pointer"
-          >
-            <div className="font-bold text-slate-800 dark:text-slate-100 text-sm group-hover:text-blue-600 transition-colors">
-              {t.settings.presets.typingCom}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              {t.settings.presets.typingComDesc}
-            </p>
-          </button>
-
-          <button
-            onClick={onApplyTypingCore}
-            className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 text-left transition-all shadow-2xs group cursor-pointer"
-          >
-            <div className="font-bold text-slate-800 dark:text-slate-100 text-sm group-hover:text-blue-600 transition-colors">
-              {t.settings.presets.typingCore}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              {t.settings.presets.typingCoreDesc}
-            </p>
-          </button>
-
-          <button
-            onClick={onApplyTotalFocus}
-            className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 text-left transition-all shadow-2xs group cursor-pointer"
-          >
-            <div className="font-bold text-slate-800 dark:text-slate-100 text-sm group-hover:text-blue-600 transition-colors">
-              {t.settings.presets.totalFocus}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              {t.settings.presets.totalFocusDesc}
-            </p>
-          </button>
-
         </div>
       </div>
 

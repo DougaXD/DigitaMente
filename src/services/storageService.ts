@@ -275,16 +275,72 @@ export const storageService = {
   getHistory(): TestResult[] {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.HISTORY);
-      return stored ? JSON.parse(stored) : [];
+      if (!stored) return [];
+      const parsed: TestResult[] = JSON.parse(stored);
+      if (!Array.isArray(parsed)) return [];
+
+      // Deduplicação única por ID mantendo a primeira ocorrência
+      const seen = new Set<string>();
+      let hasDuplicates = false;
+      const deduplicated: TestResult[] = [];
+
+      for (const item of parsed) {
+        if (!item || !item.id) continue;
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          deduplicated.push(item);
+        } else {
+          hasDuplicates = true;
+        }
+      }
+
+      if (hasDuplicates) {
+        try {
+          localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(deduplicated));
+          this.recalculatePersonalBests(deduplicated);
+        } catch (saveErr) {
+          console.error('Erro ao salvar histórico deduplicado:', saveErr);
+        }
+      }
+
+      return deduplicated;
     } catch (e) {
       return [];
+    }
+  },
+
+  recalculatePersonalBests(history: TestResult[]): void {
+    try {
+      const pbs: Record<string, PersonalBest> = {};
+      const chronological = [...history].reverse();
+      for (const res of chronological) {
+        if (res.isValid === false) continue;
+        const modeKey = `${res.testType}_${res.durationMode}_${res.elapsedSeconds || ''}`;
+        const existing = pbs[modeKey];
+        if (!existing || res.netWpm > existing.netWpm) {
+          pbs[modeKey] = {
+            modeKey,
+            netWpm: res.netWpm,
+            accuracy: res.accuracy,
+            date: res.date,
+          };
+        }
+      }
+      localStorage.setItem(STORAGE_KEYS.PERSONAL_BESTS, JSON.stringify(pbs));
+    } catch (e) {
+      console.error('Erro ao recalcular recordes:', e);
     }
   },
 
   saveResult(result: TestResult): { isNewRecord: boolean } {
     try {
       const history = this.getHistory();
-      const updatedHistory = [result, ...history.slice(0, 99)]; // Mantém os 100 mais recentes
+      // Salva de forma estritamente idempotente (ignora se id já existe)
+      if (history.some((r) => r.id === result.id)) {
+        return { isNewRecord: false };
+      }
+
+      const updatedHistory = [result, ...history.filter((r) => r.id !== result.id).slice(0, 99)]; // Mantém os 100 mais recentes
       localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(updatedHistory));
 
       // Proteção: se o teste foi marcado como inválido, não computa em recordes nem stats

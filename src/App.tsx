@@ -41,9 +41,6 @@ export default function App() {
     settings,
     updateSettings,
     resetToDefaults,
-    applyTypingComPreset,
-    applyTypingCorePreset,
-    applyTotalFocusPreset,
   } = useSettings();
 
   // Navegação
@@ -182,6 +179,9 @@ export default function App() {
     onFinish: handleTestFinish,
   });
 
+  const engineRef = useRef(engine);
+  engineRef.current = engine;
+
   // Trocar para um novo texto
   const startNewText = useCallback((specificStudyText?: StudyText) => {
     setLatestResult(null);
@@ -200,19 +200,19 @@ export default function App() {
     );
     setRawTargetText(target);
     setCurrentStudyText(studyObj);
-    engine.restartTest();
+    engineRef.current.restartTest();
 
     if ((specificStudyText || effectiveType === 'library') && settings.studyMode && settings.studyPriorReading && studyObj) {
       setIsPriorReadingOpen(true);
     }
-  }, [prepareText, testType, category, durationMode, wordCount, pageCount, settings.studyMode, settings.studyPriorReading, engine]);
+  }, [prepareText, testType, category, durationMode, wordCount, pageCount, settings.studyMode, settings.studyPriorReading]);
 
   // Reiniciar mesmo texto
   const handleRetrySameText = useCallback(() => {
     setLatestResult(null);
     setIsNewRecord(false);
-    engine.restartTest();
-  }, [engine]);
+    engineRef.current.restartTest();
+  }, []);
 
   // Atalho global Tab -> Enter para novo texto e listener global de foco/digitação
   useEffect(() => {
@@ -237,8 +237,10 @@ export default function App() {
         return;
       }
 
+      const eng = engineRef.current;
+
       // Se não estiver na tela de Teste, ou teste finalizado, ou modal/popover aberto, não intercepta
-      if (activeTab !== 'test' || latestResult !== null || engine.isFinished) {
+      if (activeTab !== 'test' || latestResult !== null || eng.isFinished) {
         return;
       }
       if (isCustomModalOpen || isPriorReadingOpen) {
@@ -247,7 +249,7 @@ export default function App() {
 
       // Verifica se o elemento atualmente focado é um campo editável ou controle interativo (input, select, textarea, etc.)
       const activeEl = document.activeElement;
-      const isTargetTextarea = activeEl === engine.textareaRef.current;
+      const isTargetTextarea = activeEl === eng.textareaRef.current;
       const isEditableOrInput =
         activeEl &&
         (activeEl.tagName === 'INPUT' ||
@@ -269,11 +271,11 @@ export default function App() {
       const isBackspace = e.key === 'Backspace';
 
       if (isPrintable || isBackspace) {
-        const textarea = engine.textareaRef.current;
+        const textarea = eng.textareaRef.current;
         if (textarea) {
           if (!isTargetTextarea) {
             textarea.focus({ preventScroll: true });
-            engine.setIsFocused(true);
+            eng.setIsFocused(true);
 
             // Simula ou despacha a tecla no textarea para que o primeiro caractere não se perca
             if (isPrintable) {
@@ -303,7 +305,7 @@ export default function App() {
                 preventDefault: () => {},
                 stopPropagation: () => {},
               } as unknown as React.KeyboardEvent<HTMLTextAreaElement>;
-              engine.handleKeyDown(synthEvent);
+              eng.handleKeyDown(synthEvent);
               e.preventDefault();
             }
           }
@@ -320,7 +322,6 @@ export default function App() {
     startNewText,
     activeTab,
     latestResult,
-    engine,
     isCustomModalOpen,
     isPriorReadingOpen,
   ]);
@@ -328,21 +329,19 @@ export default function App() {
   // Focar o textarea oculto ao abrir/voltar para a aba Teste, ao fechar modais e quando a janela recuperar foco
   useEffect(() => {
     if (activeTab === 'test' && !latestResult && !isCustomModalOpen && !isPriorReadingOpen) {
-      engine.textareaRef.current?.focus({ preventScroll: true });
-      engine.setIsFocused(true);
+      engineRef.current.focusInput();
     }
-  }, [activeTab, latestResult, isCustomModalOpen, isPriorReadingOpen, engine]);
+  }, [activeTab, latestResult, isCustomModalOpen, isPriorReadingOpen]);
 
   useEffect(() => {
     const handleWindowFocus = () => {
       if (activeTab === 'test' && !latestResult && !isCustomModalOpen && !isPriorReadingOpen) {
-        engine.textareaRef.current?.focus({ preventScroll: true });
-        engine.setIsFocused(true);
+        engineRef.current.focusInput();
       }
     };
     window.addEventListener('focus', handleWindowFocus);
     return () => window.removeEventListener('focus', handleWindowFocus);
-  }, [activeTab, latestResult, isCustomModalOpen, isPriorReadingOpen, engine]);
+  }, [activeTab, latestResult, isCustomModalOpen, isPriorReadingOpen]);
 
   // Manipuladores de alteração da barra de controle
   const handleChangeTestType = (newType: TestType) => {
@@ -665,9 +664,6 @@ export default function App() {
             settings={settings}
             onUpdateSettings={updateSettings}
             onResetDefaults={resetToDefaults}
-            onApplyTypingCom={applyTypingComPreset}
-            onApplyTypingCore={applyTypingCorePreset}
-            onApplyTotalFocus={applyTotalFocusPreset}
           />
         )}
 

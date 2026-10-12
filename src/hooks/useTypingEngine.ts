@@ -51,7 +51,13 @@ export function useTypingEngine({
   const [userInput, setUserInput] = useState<string>('');
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [isFinished, setIsFinished] = useState<boolean>(false);
-  const [isFocused, setIsFocused] = useState<boolean>(true);
+  const [isFocused, setIsFocusedState] = useState<boolean>(true);
+  const setIsFocused = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
+    setIsFocusedState((prev) => {
+      const next = typeof val === 'function' ? val(prev) : val;
+      return prev === next ? prev : next;
+    });
+  }, []);
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
   // Fantasmas de erro visual (máximo 6 simultâneos)
@@ -112,8 +118,10 @@ export function useTypingEngine({
   // Foco
   const focusInput = useCallback(() => {
     if (textareaRef.current && !finishedRef.current) {
-      textareaRef.current.focus();
-      setIsFocused(true);
+      if (document.activeElement !== textareaRef.current) {
+        textareaRef.current.focus({ preventScroll: true });
+      }
+      setIsFocused((prev) => (prev ? prev : true));
     }
   }, []);
 
@@ -182,9 +190,10 @@ export function useTypingEngine({
     const wordsTyped = currentInput.trim().split(/\s+/).filter(Boolean).length;
     const charsTyped = currentInput.length;
     const mistypedList = Array.from(mistypedKeysRef.current.values()).sort((a, b) => b.count - a.count);
+    const uid = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID().slice(0, 8) : Math.random().toString(36).slice(2, 10);
 
     const testResult: TestResult = {
-      id: `res-${Date.now()}`,
+      id: `res-${Date.now()}-${uid}`,
       date: new Date().toISOString(),
       testType,
       durationMode: durationModeRef.current,

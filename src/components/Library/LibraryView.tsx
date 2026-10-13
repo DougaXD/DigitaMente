@@ -1,21 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Search, 
-  Sparkles, 
   Plus, 
   Star, 
   BookOpen, 
-  Clock, 
-  RefreshCw, 
-  ExternalLink, 
   Trash2, 
   Edit3,
   Play,
   CheckCircle2,
   Newspaper,
-  FileText,
-  AlertTriangle,
-  Loader2,
   Check,
   X
 } from 'lucide-react';
@@ -23,7 +16,6 @@ import { StudyText, TextCategory, TextLevel } from '../../types';
 import { CATEGORIES } from '../../data/categories';
 import { SEED_TEXTS } from '../../data/seedTexts';
 import { storageService } from '../../services/storageService';
-import { geminiService } from '../../services/geminiService';
 import { normalizeText } from '../../utils/textNormalizer';
 import { t } from '../../i18n';
 
@@ -33,7 +25,7 @@ interface LibraryViewProps {
 
 export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
   // Tabs da biblioteca
-  const [activeTab, setActiveTab] = useState<'all' | 'news' | 'ai_texts' | 'my_texts' | 'add_text'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'news' | 'my_texts' | 'add_text'>('all');
 
   // Filtros e busca
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,12 +36,6 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
   // Estados de dados persistentes
   const [favorites, setFavorites] = useState<string[]>(() => storageService.getFavoriteIds());
   const [userTexts, setUserTexts] = useState<StudyText[]>(() => storageService.getUserTexts());
-  const [aiTexts, setAiTexts] = useState<StudyText[]>(() => storageService.getAiTexts());
-  const [newsList, setNewsList] = useState<StudyText[]>(() => {
-    const cached = storageService.getNewsCache();
-    return cached?.news || [];
-  });
-  const [isLoadingNews, setIsLoadingNews] = useState(false);
 
   // Modal de Prévia
   const [previewText, setPreviewText] = useState<StudyText | null>(null);
@@ -58,50 +44,15 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState<string>('');
 
-  // Formulário da aba "Adicionar texto"
-  const [addMode, setAddMode] = useState<'write' | 'ai'>('ai');
-  
-  // Campos de Escrever Texto
+  // Formulário da aba "Adicionar texto" (Texto próprio do usuário)
   const [customTitle, setCustomTitle] = useState('');
   const [customCategory, setCustomCategory] = useState<TextCategory>('Estudos');
   const [customBody, setCustomBody] = useState('');
 
-  // Campos de IA
-  const [aiCategory, setAiCategory] = useState<TextCategory>('Estudos');
-  const [aiTopic, setAiTopic] = useState('');
-  const [aiLength, setAiLength] = useState<TextLevel | 'página'>('médio');
-  const [aiDifficulty, setAiDifficulty] = useState<'simples' | 'intermediário'>('simples');
-  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
-  const [aiGeneratedSuccess, setAiGeneratedSuccess] = useState<StudyText | null>(null);
-
-  // Todos os textos disponíveis
+  // Todos os textos disponíveis (textos próprios e biblioteca local)
   const allTexts = useMemo(() => {
-    return [...userTexts, ...aiTexts, ...SEED_TEXTS];
-  }, [userTexts, aiTexts]);
-
-  // Carrega notícias automaticamente se necessário
-  useEffect(() => {
-    if (activeTab === 'news' && newsList.length === 0 && !isLoadingNews) {
-      handleRefreshNews();
-    }
-  }, [activeTab]);
-
-  const handleRefreshNews = async () => {
-    setIsLoadingNews(true);
-    try {
-      const newsItem = await geminiService.fetchLatestNews(
-        'Acontecimentos recentes e avanços da ciência, tecnologia ou sociedade no Brasil e no mundo'
-      );
-      const updated = [newsItem, ...newsList.slice(0, 7)];
-      setNewsList(updated);
-      storageService.saveNewsCache(updated);
-    } catch (e) {
-      console.warn('Erro ao atualizar notícias:', e);
-    } finally {
-      setIsLoadingNews(false);
-    }
-  };
+    return [...userTexts, ...SEED_TEXTS];
+  }, [userTexts]);
 
   const handleToggleFavorite = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -110,16 +61,11 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
   };
 
   // Exclusão de texto com confirmação
-  const handleDeleteText = (id: string, isAi: boolean, e: React.MouseEvent) => {
+  const handleDeleteText = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (window.confirm('Tem certeza de que deseja excluir este texto permanentemente?')) {
-      if (isAi) {
-        const updated = storageService.deleteAiText(id);
-        setAiTexts(updated);
-      } else {
-        const updated = storageService.deleteUserText(id);
-        setUserTexts(updated);
-      }
+      const updated = storageService.deleteUserText(id);
+      setUserTexts(updated);
     }
   };
 
@@ -130,16 +76,11 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
     setRenameValue(currentTitle);
   };
 
-  const handleSaveRename = (id: string, isAi: boolean, e: React.MouseEvent) => {
+  const handleSaveRename = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!renameValue.trim()) return;
-    if (isAi) {
-      const updated = storageService.renameAiText(id, renameValue);
-      setAiTexts(updated);
-    } else {
-      const updated = storageService.renameUserText(id, renameValue);
-      setUserTexts(updated);
-    }
+    const updated = storageService.renameUserText(id, renameValue);
+    setUserTexts(updated);
     setRenamingId(null);
   };
 
@@ -170,48 +111,13 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
     setActiveTab('my_texts');
   };
 
-  // Gerar texto por IA com persistência automática (Seção 7)
-  const handleGenerateAiText = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsGeneratingAi(true);
-    setAiError(null);
-    setAiGeneratedSuccess(null);
-
-    try {
-      const generated = await geminiService.generateStudyText({
-        category: aiCategory,
-        customTopic: aiTopic.trim() || undefined,
-        length: aiLength,
-        difficulty: aiDifficulty,
-      });
-
-      // Salva AUTOMATICAMENTE via storageService no momento da geração
-      const saveRes = storageService.saveAiText(generated);
-      if (saveRes.success) {
-        setAiTexts(saveRes.list);
-      } else if (saveRes.error) {
-        setAiError(saveRes.error);
-      }
-
-      setAiGeneratedSuccess(generated);
-    } catch (err: any) {
-      setAiError(err?.message || 'Falha na conexão com a IA. Tente novamente mais tarde.');
-    } finally {
-      setIsGeneratingAi(false);
-    }
-  };
-
-  // Textos filtrados conforme a aba ativa
+  // Textos filtrados conforme a aba ativa (apenas dados fixos locais e textos do usuário)
   const displayedTexts = useMemo(() => {
     let list: StudyText[] = [];
-
-    if (activeTab === 'ai_texts') {
-      list = aiTexts;
-    } else if (activeTab === 'my_texts') {
+    if (activeTab === 'my_texts') {
       list = userTexts;
     } else if (activeTab === 'news') {
-      const seedNews = SEED_TEXTS.filter((t) => t.category === 'Notícias');
-      list = [...newsList, ...seedNews];
+      list = SEED_TEXTS.filter((t) => t.category === 'atualidades' || (t.category as string) === 'Notícias');
     } else {
       // 'all'
       list = allTexts;
@@ -235,12 +141,12 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
       }
       return true;
     });
-  }, [activeTab, aiTexts, userTexts, newsList, allTexts, searchQuery, selectedCategory, selectedLevel, favoritesOnly, favorites]);
+  }, [activeTab, userTexts, allTexts, searchQuery, selectedCategory, selectedLevel, favoritesOnly, favorites]);
 
   return (
     <div className="w-full max-w-7xl mx-auto py-4 px-4 sm:px-6 space-y-6">
       
-      {/* Cabeçalho Limpo da Biblioteca (SEM botão flutuante de gerar IA) */}
+      {/* Cabeçalho Limpo da Biblioteca */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
@@ -278,18 +184,6 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
         </button>
 
         <button
-          onClick={() => setActiveTab('ai_texts')}
-          className={`pb-2.5 px-2.5 font-medium transition-colors cursor-pointer whitespace-nowrap border-b-2 flex items-center gap-1.5 ${
-            activeTab === 'ai_texts'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-          }`}
-        >
-          <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-          <span>Gerados por IA ({aiTexts.length})</span>
-        </button>
-
-        <button
           onClick={() => setActiveTab('my_texts')}
           className={`pb-2.5 px-2.5 font-medium transition-colors cursor-pointer whitespace-nowrap border-b-2 ${
             activeTab === 'my_texts'
@@ -313,211 +207,75 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
         </button>
       </div>
 
-      {/* ABA ESPECIAL: ADICIONAR TEXTO (Onde vive a geração por IA e escrita de textos) */}
+      {/* ABA ESPECIAL: ADICIONAR TEXTO (Criação direta de textos do usuário) */}
       {activeTab === 'add_text' && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 max-w-3xl mx-auto shadow-xs animate-in fade-in duration-150">
-          
-          {/* Seletor entre Gerar com IA e Escrever/Colar texto próprio */}
-          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl max-w-sm">
-            <button
-              onClick={() => setAddMode('ai')}
-              className={`flex-1 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                addMode === 'ai'
-                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-300 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              <Sparkles className="w-4 h-4 text-indigo-500" />
-              <span>Gerar com IA</span>
-            </button>
-
-            <button
-              onClick={() => setAddMode('write')}
-              className={`flex-1 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                addMode === 'write'
-                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-300 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              <FileText className="w-4 h-4 text-emerald-500" />
-              <span>Escrever / Colar</span>
-            </button>
+          <div>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+              Adicionar Novo Texto à Biblioteca
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Escreva ou cole seu próprio texto para treinar digitação. Ele ficará salvo com segurança no seu navegador.
+            </p>
           </div>
 
-          {/* MODO IA: FORMULÁRIO DE GERAÇÃO */}
-          {addMode === 'ai' && (
-            <form onSubmit={handleGenerateAiText} className="space-y-4 text-xs sm:text-sm">
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Área temática:
-                </label>
-                <select
-                  value={aiCategory}
-                  onChange={(e) => setAiCategory(e.target.value as TextCategory)}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.name} value={c.name}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
+          <form onSubmit={handleSaveCustomText} className="space-y-4 text-xs sm:text-sm">
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Título do texto:
+              </label>
+              <input
+                type="text"
+                required
+                value={customTitle}
+                onChange={(e) => setCustomTitle(e.target.value)}
+                placeholder="Ex: Resumo de Biologia, Minha Anotação..."
+                className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
+              />
+            </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Tema ou assunto específico (opcional):
-                </label>
-                <input
-                  type="text"
-                  value={aiTopic}
-                  onChange={(e) => setAiTopic(e.target.value)}
-                  placeholder="Ex: Como funciona a fotossíntese, A história da escrita..."
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Tamanho do texto:
-                  </label>
-                  <select
-                    value={aiLength}
-                    onChange={(e) => setAiLength(e.target.value as any)}
-                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
-                  >
-                    <option value="curto">Curto (~60 palavras)</option>
-                    <option value="médio">Médio (~150 palavras)</option>
-                    <option value="longo">Longo (~280 palavras)</option>
-                    <option value="página">Página (~250 palavras)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Nível de vocabulário:
-                  </label>
-                  <select
-                    value={aiDifficulty}
-                    onChange={(e) => setAiDifficulty(e.target.value as any)}
-                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
-                  >
-                    <option value="simples">Simples e direto</option>
-                    <option value="intermediário">Intermediário</option>
-                  </select>
-                </div>
-              </div>
-
-              {aiError && (
-                <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-xl text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 shrink-0" />
-                  <span>{aiError}</span>
-                </div>
-              )}
-
-              {aiGeneratedSuccess && (
-                <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl space-y-2">
-                  <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-xs">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    <span>Texto gerado e salvo automaticamente com sucesso!</span>
-                  </div>
-                  <h4 className="font-bold text-slate-900 dark:text-white text-sm">
-                    {aiGeneratedSuccess.title}
-                  </h4>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3">
-                    {aiGeneratedSuccess.body}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => onSelectText(aiGeneratedSuccess)}
-                    className="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Play className="w-3.5 h-3.5 fill-white" />
-                    <span>Digitar este texto agora</span>
-                  </button>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={isGeneratingAi}
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Área temática:
+              </label>
+              <select
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value as TextCategory)}
+                className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
               >
-                {isGeneratingAi ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Gerando texto educativo com IA...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>Gerar e Salvar Texto</span>
-                  </>
-                )}
-              </button>
-            </form>
-          )}
+                {CATEGORIES.map((c) => (
+                  <option key={c.name} value={c.name}>{c.name}</option>
+                ))}
+              </select>
+            </div>
 
-          {/* MODO ESCREVER/COLAR PRÓPRIO */}
-          {addMode === 'write' && (
-            <form onSubmit={handleSaveCustomText} className="space-y-4 text-xs sm:text-sm">
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Título do texto:
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={customTitle}
-                  onChange={(e) => setCustomTitle(e.target.value)}
-                  placeholder="Ex: Resumo de Biologia, Minha Anotação..."
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
-                />
-              </div>
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Conteúdo do texto:
+              </label>
+              <textarea
+                rows={6}
+                required
+                value={customBody}
+                onChange={(e) => setCustomBody(e.target.value)}
+                placeholder="Cole aqui seu parágrafo ou artigo..."
+                className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none resize-none font-sans"
+              />
+            </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Área temática:
-                </label>
-                <select
-                  value={customCategory}
-                  onChange={(e) => setCustomCategory(e.target.value as TextCategory)}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.name} value={c.name}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Conteúdo do texto:
-                </label>
-                <textarea
-                  rows={6}
-                  required
-                  value={customBody}
-                  onChange={(e) => setCustomBody(e.target.value)}
-                  placeholder="Cole aqui seu parágrafo ou artigo..."
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none resize-none font-sans"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={!customTitle.trim() || !customBody.trim()}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Check className="w-4 h-4" />
-                <span>Salvar Texto na Minha Biblioteca</span>
-              </button>
-            </form>
-          )}
-
+            <button
+              type="submit"
+              disabled={!customTitle.trim() || !customBody.trim()}
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Check className="w-4 h-4" />
+              <span>Salvar Texto na Minha Biblioteca</span>
+            </button>
+          </form>
         </div>
       )}
 
-      {/* ÁREA DE LISTAGEM DOS TEXTOS (Abas All, News, AI Texts, My Texts) */}
+      {/* ÁREA DE LISTAGEM DOS TEXTOS (Abas All, News, My Texts) */}
       {activeTab !== 'add_text' && (
         <div className="space-y-4">
           
@@ -570,17 +328,6 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                 <Star className={`w-3.5 h-3.5 ${favoritesOnly ? 'fill-amber-400 text-amber-400' : ''}`} />
                 <span>Favoritos</span>
               </button>
-
-              {activeTab === 'news' && (
-                <button
-                  onClick={handleRefreshNews}
-                  disabled={isLoadingNews}
-                  className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 flex items-center gap-1.5 font-medium hover:bg-blue-100 transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingNews ? 'animate-spin' : ''}`} />
-                  <span>Atualizar notícias</span>
-                </button>
-              )}
             </div>
           </div>
 
@@ -600,7 +347,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
               {displayedTexts.map((text) => {
                 const isFav = favorites.includes(text.id);
                 const estReadMins = Math.max(1, Math.round(text.wordCount / 120));
-                const isUserOrAi = text.sourceType === 'usuario' || text.sourceType === 'ia';
+                const isUserText = text.sourceType === 'usuario';
 
                 return (
                   <div
@@ -610,16 +357,14 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                   >
                     <div className="space-y-1.5">
                       
-                      {/* Topo do Cartão: Metadados limpos sem pill */}
+                      {/* Topo do Cartão */}
                       <div className="flex items-center justify-between text-[11px] text-slate-400">
                         <div className="flex items-center gap-1.5 truncate">
                           <span className="font-semibold text-slate-600 dark:text-slate-300">
                             {text.category}
                           </span>
                           <span aria-hidden="true">·</span>
-                          {text.sourceType === 'ia' ? (
-                            <span className="font-medium text-indigo-500">Gerado por IA</span>
-                          ) : text.sourceType === 'usuario' ? (
+                          {text.sourceType === 'usuario' ? (
                             <span className="font-medium text-emerald-500">Meu texto</span>
                           ) : text.sourceType === 'real' ? (
                             <span className="font-medium text-amber-500">Domínio Público</span>
@@ -627,7 +372,6 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                             <span className="font-medium text-slate-400">Texto editorial</span>
                           )}
                         </div>
-
                         <button
                           onClick={(e) => handleToggleFavorite(text.id, e)}
                           className="p-1 text-slate-300 hover:text-amber-400 transition-colors"
@@ -637,26 +381,26 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                         </button>
                       </div>
 
-                      {/* Título com opção de renomeação inline se for user ou AI */}
+                      {/* Título com opção de renomeação inline se for texto do usuário */}
                       {renamingId === text.id ? (
                         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="text"
                             value={renameValue}
                             onChange={(e) => setRenameValue(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSaveRename(text.id, text.sourceType === 'ia', e as any)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSaveRename(text.id, e as any)}
                             className="flex-1 px-2 py-1 text-xs bg-slate-50 dark:bg-slate-800 border border-blue-500 rounded-lg outline-none"
                             autoFocus
                           />
                           <button
-                            onClick={(e) => handleSaveRename(text.id, text.sourceType === 'ia', e)}
+                            onClick={(e) => handleSaveRename(text.id, e)}
                             className="p-1 text-emerald-600 hover:bg-emerald-50 rounded"
                           >
                             <Check className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); setRenamingId(null); }}
-                            className="p-1 text-slate-400 hover:bg-slate-100 rounded"
+                            className="p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>
@@ -681,7 +425,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                         <span>~{estReadMins} min</span>
                       </div>
 
-                      {isUserOrAi ? (
+                      {isUserText ? (
                         <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={(e) => handleStartRename(text.id, text.title, e)}
@@ -691,7 +435,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={(e) => handleDeleteText(text.id, text.sourceType === 'ia', e)}
+                            onClick={(e) => handleDeleteText(text.id, e)}
                             className="p-1 text-slate-400 hover:text-rose-500 rounded"
                             title="Excluir"
                           >
@@ -711,41 +455,37 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                         </span>
                       )}
                     </div>
-
                   </div>
                 );
               })}
             </div>
           )}
-
         </div>
       )}
 
-      {/* Modal de Prévia do Texto Escolhido */}
+      {/* MODAL DE PRÉVIA COMPLETA DO TEXTO */}
       {previewText && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-xl w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl">
-            
-            <div className="flex items-start justify-between">
+        <div 
+          onClick={() => setPreviewText(null)}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-xl w-full space-y-4 shadow-xl"
+          >
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-                  {previewText.category}
-                </span>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
+                <h3 className="font-black text-lg text-slate-900 dark:text-white">
                   {previewText.title}
-                </h2>
+                </h3>
                 <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                  <span>{previewText.category}</span>
+                  <span>·</span>
                   <span>{previewText.wordCount} palavras</span>
                   {previewText.sourceName && (
                     <>
                       <span>·</span>
                       <span>{previewText.sourceName}</span>
-                    </>
-                  )}
-                  {previewText.sourceType === 'editorial' && (
-                    <>
-                      <span>·</span>
-                      <span>Texto editorial</span>
                     </>
                   )}
                 </div>
@@ -796,11 +536,9 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                 <span>Digitar este texto</span>
               </button>
             </div>
-
           </div>
         </div>
       )}
-
     </div>
   );
 };

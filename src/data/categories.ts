@@ -20,6 +20,63 @@ export interface CategoryInfo {
 }
 
 export const CATEGORIES: CategoryInfo[] = [
+  // Novas categorias do schema padronizado
+  {
+    name: 'ciencia',
+    description: 'Ciências exatas, biológicas, neurociência e saúde.',
+    icon: GraduationCap,
+    color: 'emerald',
+    badgeBg: 'bg-emerald-500/10 dark:bg-emerald-400/10',
+    badgeText: 'text-emerald-600 dark:text-emerald-400',
+  },
+  {
+    name: 'literatura',
+    description: 'Obras clássicas, prosa e ficção de valor cultural.',
+    icon: BookOpen,
+    color: 'amber',
+    badgeBg: 'bg-amber-500/10 dark:bg-amber-400/10',
+    badgeText: 'text-amber-600 dark:text-amber-400',
+  },
+  {
+    name: 'tecnologia',
+    description: 'Inovação, computação, chips e conectividade.',
+    icon: Cpu,
+    color: 'cyan',
+    badgeBg: 'bg-cyan-500/10 dark:bg-cyan-400/10',
+    badgeText: 'text-cyan-600 dark:text-cyan-400',
+  },
+  {
+    name: 'natureza',
+    description: 'Fauna, flora, ecossistemas e meio ambiente.',
+    icon: Sparkles,
+    color: 'emerald',
+    badgeBg: 'bg-emerald-500/10 dark:bg-emerald-400/10',
+    badgeText: 'text-emerald-600 dark:text-emerald-400',
+  },
+  {
+    name: 'filosofia',
+    description: 'Pensamento crítico, ética, cidadania e sociedade.',
+    icon: GraduationCap,
+    color: 'violet',
+    badgeBg: 'bg-violet-500/10 dark:bg-violet-400/10',
+    badgeText: 'text-violet-600 dark:text-violet-400',
+  },
+  {
+    name: 'historia',
+    description: 'Grandes períodos, transformações sociais e patrimônio histórico.',
+    icon: Flame,
+    color: 'rose',
+    badgeBg: 'bg-rose-500/10 dark:bg-rose-400/10',
+    badgeText: 'text-rose-600 dark:text-rose-400',
+  },
+  {
+    name: 'atualidades',
+    description: 'Economia, sustentabilidade urbana e conjuntura.',
+    icon: Newspaper,
+    color: 'blue',
+    badgeBg: 'bg-blue-500/10 dark:bg-blue-400/10',
+    badgeText: 'text-blue-600 dark:text-blue-400',
+  },
   {
     name: 'Notícias',
     description: 'Acontecimentos factuais e conceitos cívicos essenciais.',

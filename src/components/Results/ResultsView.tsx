@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { 
   Trophy, 
   RotateCcw, 
@@ -48,7 +48,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
   onViewStats,
 }) => {
   // Estado do quiz interativo de fixação
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [quizSubmitted, setQuizSubmitted] = useState<boolean>(false);
   const [quizScore, setQuizScore] = useState<number>(0);
 
@@ -67,18 +67,69 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
     }
   }, [isNewRecord]);
 
-  const quizQuestions: QuizQuestion[] = studyText?.quiz || result.quiz || [];
+  const rawQuizQuestions: QuizQuestion[] = studyText?.quiz || result.quiz || [];
   const keyPoints: string[] = studyText?.keyPoints || result.keyPoints || [];
 
-  const handleSelectOption = (qIndex: number, optionIndex: number) => {
+  // Fisher-Yates shuffle helper
+  const fisherYatesShuffle = <T,>(array: T[]): T[] => {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  };
+
+  // Prepara as perguntas com opções embaralhadas e distribuição justa (shuffle bag 0..3)
+  const preparedQuiz = useMemo(() => {
+    if (!rawQuizQuestions || rawQuizQuestions.length === 0) return [];
+
+    // Shuffle bag de posições (0..3) para garantir distribuição uniforme e evitar padrões fixos
+    let bag: number[] = [];
+    const refillBag = () => {
+      bag = fisherYatesShuffle([0, 1, 2, 3]);
+    };
+
+    return rawQuizQuestions.map((q) => {
+      const correctText = q.options[q.answerIndex] ?? q.options[0];
+      const incorrectOptions = q.options.filter((_, idx) => idx !== q.answerIndex);
+      const shuffledIncorrect = fisherYatesShuffle(incorrectOptions);
+
+      if (bag.length === 0) {
+        refillBag();
+      }
+      const targetPos = bag.pop()!;
+      // Garante que o targetPos cabe nas opções disponíveis
+      const safePos = Math.min(targetPos, q.options.length - 1);
+
+      const finalOptions: string[] = [];
+      let incIdx = 0;
+      for (let i = 0; i < q.options.length; i++) {
+        if (i === safePos) {
+          finalOptions.push(correctText);
+        } else {
+          finalOptions.push(shuffledIncorrect[incIdx++] ?? '');
+        }
+      }
+
+      return {
+        question: q.question,
+        options: finalOptions,
+        correctValue: correctText,
+        explanation: q.explanation,
+      };
+    });
+  }, [rawQuizQuestions]);
+
+  const handleSelectOption = (qIndex: number, optionValue: string) => {
     if (quizSubmitted) return;
-    setSelectedAnswers((prev) => ({ ...prev, [qIndex]: optionIndex }));
+    setSelectedAnswers((prev) => ({ ...prev, [qIndex]: optionValue }));
   };
 
   const handleFinishQuiz = () => {
     let score = 0;
-    quizQuestions.forEach((q, idx) => {
-      if (selectedAnswers[idx] === q.answerIndex) {
+    preparedQuiz.forEach((q, idx) => {
+      if (selectedAnswers[idx] === q.correctValue) {
         score++;
       }
     });
@@ -88,11 +139,11 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
     // Atualiza resultado e estatísticas de quiz no storageService
     const updatedResult: TestResult = {
       ...result,
-      quizScore: { total: quizQuestions.length, correct: score },
+      quizScore: { total: preparedQuiz.length, correct: score },
     };
     storageService.saveResult(updatedResult);
 
-    if (score === quizQuestions.length) {
+    if (score === preparedQuiz.length) {
       try {
         confetti({
           particleCount: 80,
@@ -306,7 +357,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
       )}
 
       {/* SEÇÃO FIXAÇÃO DE CONTEÚDO (Modo Estudo) [P1] */}
-      {Boolean(result.isStudyMode && (keyPoints.length > 0 || quizQuestions.length > 0)) && (
+      {Boolean(result.isStudyMode && (keyPoints.length > 0 || preparedQuiz.length > 0)) && (
         <div className="bg-gradient-to-b from-blue-50/50 to-white dark:from-slate-900 dark:to-slate-900 border border-blue-200 dark:border-blue-900/60 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
           
           <div className="flex items-center gap-3">
@@ -341,7 +392,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
           )}
 
           {/* Mini Quiz Interativo */}
-          {quizQuestions.length > 0 && (
+          {preparedQuiz.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -354,15 +405,14 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                 </div>
                 {quizSubmitted && (
                   <span className="px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold text-xs">
-                    {quizScore} de {quizQuestions.length} corretas
+                    {quizScore} de {preparedQuiz.length} corretas
                   </span>
                 )}
               </div>
 
               <div className="space-y-4">
-                {quizQuestions.map((q, qIndex) => {
+                {preparedQuiz.map((q, qIndex) => {
                   const userAnswer = selectedAnswers[qIndex];
-                  const isAnswered = userAnswer !== undefined;
 
                   return (
                     <div 
@@ -375,8 +425,8 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                         {q.options.map((opt, optIndex) => {
-                          const isSelected = userAnswer === optIndex;
-                          const isCorrectOption = optIndex === q.answerIndex;
+                          const isSelected = userAnswer === opt;
+                          const isCorrectOption = opt === q.correctValue;
 
                           let btnStyle = 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50';
 
@@ -394,7 +444,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                             <button
                               key={optIndex}
                               disabled={quizSubmitted}
-                              onClick={() => handleSelectOption(qIndex, optIndex)}
+                              onClick={() => handleSelectOption(qIndex, opt)}
                               className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${btnStyle}`}
                             >
                               <span>{opt}</span>
@@ -424,7 +474,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                 <div className="flex justify-end pt-2">
                   <button
                     onClick={handleFinishQuiz}
-                    disabled={Object.keys(selectedAnswers).length < quizQuestions.length}
+                    disabled={Object.keys(selectedAnswers).length < preparedQuiz.length}
                     className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
                   >
                     {t.results.finishQuiz}

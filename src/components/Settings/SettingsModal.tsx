@@ -654,7 +654,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
                     settings.fontFamily === f.id
                       ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200 font-bold'
-                      : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-400'
+                      : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-600 dark:text-slate-400'
                   }`}
                 >
                   <span className={`${f.font} text-sm block`}>Aa</span>
@@ -681,7 +681,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
                     settings.caretStyle === c.id
                       ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200 font-bold'
-                      : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-400'
+                      : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-600 dark:text-slate-400'
                   }`}
                 >
                   <span className="text-[11px] block">{c.label}</span>
@@ -710,7 +710,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition-all cursor-pointer ${
                     settings.accentColor === acc.id
                       ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200 font-bold'
-                      : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-400'
+                      : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-600 dark:text-slate-400'
                   }`}
                 >
                   <span className={`w-3.5 h-3.5 rounded-full ${acc.bg}`} />
@@ -839,10 +839,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <label className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/60 cursor-pointer sm:col-span-3">
             <div>
               <span className="font-semibold text-slate-800 dark:text-slate-200 block">
-                Incluir Textos de IA e Meus Textos no Modo Aleatório
+                Incluir Meus Textos no Modo Aleatório
               </span>
               <span className="text-[11px] text-slate-400">
-                Quando ativado, textos gerados por IA e textos criados por você também entram no sorteio aleatório da biblioteca.
+                Quando ativado, os textos criados por você também entram no sorteio aleatório da biblioteca.
               </span>
             </div>
             <input

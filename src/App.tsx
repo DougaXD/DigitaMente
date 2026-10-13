@@ -102,12 +102,14 @@ export default function App() {
         studyObj = chosenStudyText;
         text = chosenStudyText.body;
       } else {
-        const pool = [...storageService.getUserTexts(), ...SEED_TEXTS];
+        const pool = (settings.includeAiAndUserInRandom ?? true)
+          ? [...storageService.getUserTexts(), ...SEED_TEXTS]
+          : [...SEED_TEXTS];
         const filtered = cat === 'Aleatório'
           ? pool
           : pool.filter((item) => item.category === cat);
         const candidates = filtered.length > 0 ? filtered : pool;
-        const pick = candidates[Math.floor(Math.random() * candidates.length)];
+        const pick = storageService.getNextShuffleText(candidates) || candidates[0];
         studyObj = pick;
         text = pick.body;
       }
@@ -125,7 +127,7 @@ export default function App() {
     }
 
     return { target: normalizeText(text), studyObj };
-  }, [settings.includePunctuationInWords]);
+  }, [settings.includePunctuationInWords, settings.includeAiAndUserInRandom]);
 
   // Inicializa o primeiro texto
   useEffect(() => {

@@ -49,6 +49,9 @@
   --surface-shadow: 0 22px 44px -14px rgba(15, 23, 42, 0.20), 0 8px 18px rgba(15, 23, 42, 0.08);
   --surface-shadow-focus: 0 26px 48px -14px rgba(15, 23, 42, 0.24), 0 10px 22px rgba(15, 23, 42, 0.10);
 
+  /* Tokens de interação/hover */
+  --surface-hover: #f1f5f9;
+
   /* Tamanho configurável do contador de teste */
   --counter-size: 22px;
 }
@@ -76,6 +79,9 @@
   --border-subtle: var(--line);
   --accent-blue: var(--accent);
 
+  /* Tokens de interação/hover */
+  --surface-hover: #1e293b;
+
   /* Caracteres de digitação */
   --char-pending: #64748b;
   --char-correct: #34d399;
@@ -85,6 +91,32 @@
   --surface-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.02) 100%);
   --surface-shadow: 0 22px 44px -10px rgba(0, 0, 0, 0.65), 0 8px 18px rgba(0, 0, 0, 0.35);
   --surface-shadow-focus: 0 26px 50px -10px rgba(0, 0, 0, 0.75), 0 10px 22px rgba(0, 0, 0, 0.42);
+}
+
+html {
+  scrollbar-gutter: stable;
+  scrollbar-color: var(--line) transparent;
+}
+
+/* Scrollbar estilizada harmoniosa para navegadores WebKit/Blink */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--line);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ink-faint);
 }
 
 body,

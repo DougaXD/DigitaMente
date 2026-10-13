@@ -13,6 +13,14 @@ export type TestType =
 export type TestDurationMode = 'time' | 'words' | 'pages' | 'full_text';
 
 export type TextCategory = 
+  | 'ciencia'
+  | 'literatura'
+  | 'tecnologia'
+  | 'natureza'
+  | 'filosofia'
+  | 'historia'
+  | 'atualidades'
+  // Categorias legadas mantidas
   | 'Notícias'
   | 'Atualidades'
   | 'Estudos'
@@ -22,8 +30,21 @@ export type TextCategory =
   | 'Negócios e Finanças'
   | 'Literatura clássica';
 
-export type TextLevel = 'curto' | 'médio' | 'longo';
+export type TextDifficulty = 'facil' | 'medio' | 'dificil';
+export type TextOrigin = 'universal' | 'br-specific';
+export type TextLocale = 'pt-BR';
 
+export interface Text {
+  id: string;
+  title: string;
+  text: string;
+  category: TextCategory;
+  difficulty: TextDifficulty;
+  origin: TextOrigin;
+  locale: TextLocale;
+}
+
+export type TextLevel = 'curto' | 'médio' | 'longo';
 export type SourceType = 'editorial' | 'real' | 'ia' | 'usuario';
 
 export interface QuizQuestion {
@@ -33,7 +54,7 @@ export interface QuizQuestion {
   explanation?: string;
 }
 
-export interface StudyText {
+export interface StudyText extends Partial<Text> {
   id: string;
   title: string;
   category: TextCategory;
@@ -42,6 +63,10 @@ export interface StudyText {
   level: TextLevel;
   wordCount: number;
   body: string;
+  text?: string;
+  difficulty?: TextDifficulty;
+  origin?: TextOrigin;
+  locale?: TextLocale;
   sourceType: SourceType;
   sourceName?: string;
   sourceUrl?: string;

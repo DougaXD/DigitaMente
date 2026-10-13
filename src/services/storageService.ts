@@ -17,6 +17,7 @@ const STORAGE_KEYS = {
   PERSONAL_BESTS: 'digitamente_pbs_v1',
   STATS: 'digitamente_stats_v1',
   NEWS_CACHE: 'digitamente_news_cache_v1',
+  SHUFFLE_BAG: 'digitaMente:shuffleBag:v1',
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -169,7 +170,50 @@ export const storageService = {
   getUserTexts(): StudyText[] {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.USER_TEXTS);
-      return stored ? JSON.parse(stored) : [];
+      let texts: StudyText[] = stored ? JSON.parse(stored) : [];
+
+      // Migração e normalização de textos legados de IA para tipo 'usuario'
+      // Preserva dados sem deletar nenhum texto do usuário
+      const aiStored = localStorage.getItem(STORAGE_KEYS.AI_TEXTS);
+      if (aiStored) {
+        try {
+          const aiParsed: StudyText[] = JSON.parse(aiStored);
+          if (Array.isArray(aiParsed) && aiParsed.length > 0) {
+            const existingIds = new Set(texts.map((t) => t.id));
+            const convertedAiTexts = aiParsed.map((item) => ({
+              ...item,
+              sourceType: 'usuario' as const,
+              sourceName: item.sourceName || 'Texto Importado',
+            }));
+            for (const item of convertedAiTexts) {
+              if (!existingIds.has(item.id)) {
+                texts.push(item);
+                existingIds.add(item.id);
+              }
+            }
+            localStorage.setItem(STORAGE_KEYS.USER_TEXTS, JSON.stringify(texts));
+            localStorage.removeItem(STORAGE_KEYS.AI_TEXTS);
+          }
+        } catch (e) {
+          console.error('Erro ao migrar textos de IA:', e);
+        }
+      }
+
+      // Normaliza qualquer flag de origem de IA existente nos próprios textos salvos
+      let needsSave = false;
+      const normalized = texts.map((t) => {
+        if ((t.sourceType as string) === 'ia') {
+          needsSave = true;
+          return { ...t, sourceType: 'usuario' as const, sourceName: t.sourceName || 'Meu texto' };
+        }
+        return t;
+      });
+
+      if (needsSave) {
+        localStorage.setItem(STORAGE_KEYS.USER_TEXTS, JSON.stringify(normalized));
+      }
+
+      return normalized;
     } catch (e) {
       return [];
     }
@@ -509,6 +553,86 @@ export const storageService = {
     } catch (e) {
       console.error('Erro ao salvar cache de notícias:', e);
     }
+  },
+
+  // Shuffle Bag (Playlist Aleatória tipo Spotify para evitar repetições consecutivas)
+  getShuffleBagState(): { bag: string[]; lastTextId: string | null } {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.SHUFFLE_BAG);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed?.bag)) {
+          return {
+            bag: parsed.bag,
+            lastTextId: typeof parsed.lastTextId === 'string' ? parsed.lastTextId : null,
+          };
+        }
+      }
+    } catch (e) {
+      // Migração silenciosa / fallback
+    }
+    return { bag: [], lastTextId: null };
+  },
+
+  saveShuffleBagState(state: { bag: string[]; lastTextId: string | null }): void {
+    try {
+      localStorage.setItem(STORAGE_KEYS.SHUFFLE_BAG, JSON.stringify(state));
+    } catch (e) {
+      console.error('Erro ao salvar estado da shuffle bag:', e);
+    }
+  },
+
+  /**
+   * Consome o próximo texto da shuffle bag dado o pool ativo de textos.
+   * Ao esgotar o pool, reembaralha automaticamente com Fisher-Yates,
+   * garantindo que nunca repita o mesmo texto duas vezes seguidas inclusive na virada do baralho.
+   */
+  getNextShuffleText(pool: StudyText[]): StudyText | null {
+    if (!pool || pool.length === 0) return null;
+    if (pool.length === 1) return pool[0];
+
+    const poolMap = new Map<string, StudyText>();
+    const poolIds: string[] = [];
+    for (const t of pool) {
+      if (t && t.id) {
+        poolMap.set(t.id, t);
+        poolIds.push(t.id);
+      }
+    }
+
+    if (poolIds.length === 0) return null;
+
+    // Fisher-Yates shuffle
+    const shuffleArray = (array: string[]): string[] => {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    };
+
+    const currentState = this.getShuffleBagState();
+    let currentBag = currentState.bag.filter((id) => poolMap.has(id));
+    let lastId = currentState.lastTextId;
+
+    if (currentBag.length === 0) {
+      let fresh = shuffleArray(poolIds);
+      // Evita repetir imediatamente o último texto na virada do baralho
+      if (lastId && fresh.length > 1 && fresh[0] === lastId) {
+        const swapIdx = Math.floor(Math.random() * (fresh.length - 1)) + 1;
+        [fresh[0], fresh[swapIdx]] = [fresh[swapIdx], fresh[0]];
+      }
+      currentBag = fresh;
+    }
+
+    const nextId = currentBag.shift()!;
+    this.saveShuffleBagState({
+      bag: currentBag,
+      lastTextId: nextId,
+    });
+
+    return poolMap.get(nextId) || pool[0];
   },
 
   // Exportação Integral

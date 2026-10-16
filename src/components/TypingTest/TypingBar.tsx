@@ -17,7 +17,7 @@ import {
   ErrorBehavior
 } from '../../types';
 import { CATEGORIES } from '../../data/categories';
-import { t } from '../../i18n';
+import { t , ui } from '../../i18n';
 
 interface TypingBarProps {
   testType: TestType;
@@ -95,10 +95,10 @@ export const TypingBar: React.FC<TypingBarProps> = ({
       return timeSeconds >= 60 ? `${timeSeconds / 60} min` : `${timeSeconds}s`;
     }
     if (durationMode === 'words') {
-      return `${wordCount} palavras`;
+      return `${wordCount} ${t.testBar.wordsCount}`;
     }
     if (durationMode === 'pages') {
-      return `${pageCount} ${pageCount === 1 ? 'página' : 'páginas'}`;
+      return `${pageCount} ${pageCount === 1 ? ui.pagina_singular : ui.pagina_plural}`;
     }
     return 'Texto completo';
   };
@@ -131,15 +131,17 @@ export const TypingBar: React.FC<TypingBarProps> = ({
                 onChangeTestType(val);
               }
             }}
-            aria-label="Tipo de teste"
+            aria-label={ui.typing_bar_tipo_de_teste}
             className="h-[40px] appearance-none bg-white dark:bg-white/[0.05] hover:bg-slate-50 dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 rounded-[10px] py-2 pl-[14px] pr-8 text-sm font-medium text-slate-800 dark:text-slate-200 outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer transition-colors shadow-2xs"
           >
-            <option value="library" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">Texto da biblioteca</option>
-            <option value="common_words" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">Palavras comuns</option>
-            <option value="no_accents" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">Sem acentos</option>
-            <option value="alphabet" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Alfabeto</option>
-            <option value="numbers" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">Números</option>
-            <option value="custom" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">Customizado...</option>
+            <option value="library" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">{t.testBar.types.library}</option>
+            <option value="common_words" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">{t.testBar.types.common_words}</option>
+            {settings.language !== 'en' && (
+              <option value="no_accents" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">{t.testBar.types.no_accents}</option>
+            )}
+            <option value="alphabet" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">{t.testBar.types.alphabet}</option>
+            <option value="numbers" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">{t.testBar.types.numbers}</option>
+            <option value="custom" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">{t.testBar.types.custom}...</option>
           </select>
           <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
         </div>
@@ -244,7 +246,7 @@ export const TypingBar: React.FC<TypingBarProps> = ({
                       type="number"
                       min="1"
                       max="60"
-                      placeholder="Minutos"
+                      placeholder={ui.typing_bar_minutos}
                       value={customMinutesInput}
                       onChange={(e) => setCustomMinutesInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleApplyCustomMinutes()}
@@ -315,13 +317,13 @@ export const TypingBar: React.FC<TypingBarProps> = ({
             <select
               value={category}
               onChange={(e) => onChangeCategory(e.target.value as any)}
-              aria-label="Área temática"
+              aria-label={ui.typing_bar_area_tematica}
               className="h-[40px] appearance-none bg-white dark:bg-white/[0.05] hover:bg-slate-50 dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 rounded-[10px] py-2 pl-[14px] pr-8 text-sm font-medium text-slate-800 dark:text-slate-200 outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer transition-colors shadow-2xs"
             >
-              <option value="Aleatório" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">Área: Aleatório</option>
+              <option value="Aleatório" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">{t.testBar.category}: {t.testBar.randomCategory}</option>
               {CATEGORIES.map((cat) => (
                 <option key={cat.name} value={cat.name} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
-                  {cat.name}
+                  {t.categories[cat.name]?.name || cat.name}
                 </option>
               ))}
             </select>
@@ -366,7 +368,7 @@ export const TypingBar: React.FC<TypingBarProps> = ({
               title={buttonTitle}
             >
               <GraduationCap className="w-4 h-4" />
-              <span className="hidden sm:inline">Estudo</span>
+              <span className="hidden sm:inline">{ui.typing_bar_estudo}</span>
               <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-blue-600 dark:bg-blue-400' : 'bg-transparent'}`} />
             </button>
           );
@@ -382,7 +384,7 @@ export const TypingBar: React.FC<TypingBarProps> = ({
                 ? 'bg-slate-100 dark:bg-white/[0.10] border-slate-300 dark:border-white/20 text-slate-900 dark:text-white'
                 : 'bg-white dark:bg-white/[0.05] hover:bg-slate-50 dark:hover:bg-white/[0.08] border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 text-slate-700 dark:text-slate-300'
             }`}
-            title="Ajustes rápidos de digitação e aparência"
+            title={ui.typing_bar_ajustes_rapidos_de_digitacao_e}
           >
             <SlidersHorizontal className="w-4 h-4" />
           </button>
@@ -396,7 +398,7 @@ export const TypingBar: React.FC<TypingBarProps> = ({
               {/* Tamanho da Fonte */}
               <div className="space-y-1">
                 <div className="flex justify-between text-slate-500">
-                  <span>Tamanho da fonte</span>
+                  <span>{ui.typing_bar_tamanho_da_fonte}</span>
                   <span className="font-semibold text-slate-800 dark:text-slate-200">{settings.fontSize}px</span>
                 </div>
                 <input
@@ -413,7 +415,7 @@ export const TypingBar: React.FC<TypingBarProps> = ({
               {/* Linhas Visíveis */}
               <div className="space-y-1">
                 <div className="flex justify-between text-slate-500">
-                  <span>Linhas visíveis</span>
+                  <span>{ui.typing_bar_linhas_visiveis}</span>
                   <span className="font-semibold text-slate-800 dark:text-slate-200">{settings.visibleLines}</span>
                 </div>
                 <input
@@ -429,21 +431,21 @@ export const TypingBar: React.FC<TypingBarProps> = ({
 
               {/* Comportamento ao Errar */}
               <div className="space-y-1 pt-1 border-t border-slate-100 dark:border-slate-800">
-                <label className="text-slate-500 block">Ao errar:</label>
+                <label className="text-slate-500 block">{ui.typing_bar_ao_errar}</label>
                 <select
                   value={settings.errorBehavior}
                   onChange={(e) => onUpdateSettings({ errorBehavior: e.target.value as ErrorBehavior })}
                   className="w-full p-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 outline-none"
                 >
-                  <option value="free">Livre (avança, Backspace)</option>
-                  <option value="stop_on_error">Parar no erro (não avança)</option>
-                  <option value="require_word_correction">Exigir correção por palavra</option>
+                  <option value="free">{ui.typing_bar_livre_avanca_backspace}</option>
+                  <option value="stop_on_error">{ui.typing_bar_parar_no_erro_nao_avanca}</option>
+                  <option value="require_word_correction">{ui.typing_bar_exigir_correcao_por_palavra}</option>
                 </select>
               </div>
 
               {/* Sons Rápidos */}
               <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
-                <span className="text-slate-600 dark:text-slate-400">Som geral</span>
+                <span className="text-slate-600 dark:text-slate-400">{ui.typing_bar_som_geral}</span>
                 <button
                   onClick={() => onUpdateSettings({ soundEnabled: !settings.soundEnabled })}
                   className={`p-1 rounded-md transition-colors ${
@@ -456,7 +458,7 @@ export const TypingBar: React.FC<TypingBarProps> = ({
 
               {/* Esconder UI ao digitar */}
               <label className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800 cursor-pointer">
-                <span className="text-slate-600 dark:text-slate-400">Foco automático</span>
+                <span className="text-slate-600 dark:text-slate-400">{ui.typing_bar_foco_automatico}</span>
                 <input
                   type="checkbox"
                   checked={settings.hideUiOnTyping}

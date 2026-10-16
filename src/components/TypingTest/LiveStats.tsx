@@ -1,3 +1,4 @@
+import { ui } from '../../i18n';
 import React from 'react';
 import { Settings, TestDurationMode } from '../../types';
 import { formatTime } from '../../utils/metrics';
@@ -57,7 +58,7 @@ export const LiveStats: React.FC<LiveStatsProps> = ({
       {/* Precisão Ao Vivo (texto simples de 16px) */}
       {settings.showLiveAccuracy && (
         <span className="flex items-baseline gap-1 text-[16px] text-slate-600 dark:text-slate-400">
-          <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">Acc</span>
+          <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">{ui.live_stats_acc}</span>
           <span className="font-semibold text-slate-800 dark:text-slate-200">{liveAccuracy}%</span>
         </span>
       )}

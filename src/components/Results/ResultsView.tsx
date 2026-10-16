@@ -28,7 +28,7 @@ import confetti from 'canvas-confetti';
 import { TestResult, QuizQuestion, StudyText } from '../../types';
 import { formatTime } from '../../utils/metrics';
 import { storageService } from '../../services/storageService';
-import { t } from '../../i18n';
+import { t , ui } from '../../i18n';
 
 interface ResultsViewProps {
   result: TestResult;
@@ -213,7 +213,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
         {/* Erros e Correções */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-semibold mb-2">
-            <span>Erros e Correções</span>
+            <span>{ui.results_erros_e_correcoes}</span>
             <AlertCircle className="w-4 h-4 text-rose-500" />
           </div>
           <div className="text-3xl sm:text-4xl font-extrabold text-rose-600 dark:text-rose-400 font-mono">
@@ -257,7 +257,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
         <div>
           <span className="text-slate-400 block">{t.results.wordsTyped}</span>
           <span className="text-sm font-bold text-slate-800 dark:text-slate-200 font-mono">
-            {result.wordsTyped} palavras
+            {result.wordsTyped} {t.library.words}
           </span>
         </div>
         <div>
@@ -279,11 +279,11 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
             <div className="flex items-center gap-3 text-xs text-slate-500">
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                <span>WPM Líquido</span>
+                <span>{ui.results_wpm_liquido}</span>
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-600" />
-                <span>WPM Bruto</span>
+                <span>{ui.results_wpm_bruto}</span>
               </span>
             </div>
           </div>
@@ -306,7 +306,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                 <Line 
                   type="monotone" 
                   dataKey="rawWpm" 
-                  name="WPM Bruto" 
+                  name={ui.results_wpm_bruto} 
                   stroke="#94a3b8" 
                   strokeWidth={1.5} 
                   strokeDasharray="4 4"
@@ -315,7 +315,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                 <Line 
                   type="monotone" 
                   dataKey="wpm" 
-                  name="WPM Líquido" 
+                  name={ui.results_wpm_liquido} 
                   stroke="#3b82f6" 
                   strokeWidth={2.5} 
                   dot={false} 
@@ -405,7 +405,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                 </div>
                 {quizSubmitted && (
                   <span className="px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold text-xs">
-                    {quizScore} de {preparedQuiz.length} corretas
+                    {ui.quiz_corretas_de.replace("{score}", String(quizScore)).replace("{total}", String(preparedQuiz.length))}
                   </span>
                 )}
               </div>

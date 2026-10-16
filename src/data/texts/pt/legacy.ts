@@ -1,11 +1,11 @@
-import { StudyText } from '../types';
+import { StudyText } from '../../../types';
 
 /**
  * Banco de Textos Padronizado (seedTexts)
  * Schema: id, title, text, body, category, difficulty, origin, locale, etc.
  * Agrupado por categoria para auditoria cultural e suporte a internacionalização.
  */
-export const SEED_TEXTS: StudyText[] = [
+export const texts: StudyText[] = [
   // ==========================================
   // CATEGORIA: CIÊNCIA & SAÚDE (ciencia)
   // ==========================================

@@ -48,7 +48,7 @@ export const StudyPreviewModal: React.FC<StudyPreviewModalProps> = ({
         {/* Título do texto e Categoria */}
         <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
           <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-            {studyText.category} {studyText.subcategory ? `· ${studyText.subcategory}` : ''}
+            {t.categories[studyText.category]?.name || studyText.category} {studyText.subcategory ? `· ${studyText.subcategory}` : ''}
           </span>
           <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mt-1">
             {studyText.title}

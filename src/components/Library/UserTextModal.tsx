@@ -3,7 +3,7 @@ import { X, BookPlus, Check } from 'lucide-react';
 import { StudyText, TextCategory } from '../../types';
 import { CATEGORIES } from '../../data/categories';
 import { normalizeText } from '../../utils/textNormalizer';
-import { t } from '../../i18n';
+import { t , ui } from '../../i18n';
 
 interface UserTextModalProps {
   isOpen: boolean;
@@ -19,7 +19,7 @@ export const UserTextModal: React.FC<UserTextModalProps> = ({
   initialText,
 }) => {
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState<TextCategory>('Estudos');
+  const [category, setCategory] = useState<TextCategory>('ciencia');
   const [body, setBody] = useState('');
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export const UserTextModal: React.FC<UserTextModalProps> = ({
       setBody(initialText.body);
     } else {
       setTitle('');
-      setCategory('Estudos');
+      setCategory('ciencia');
       setBody('');
     }
   }, [initialText, isOpen]);
@@ -89,7 +89,7 @@ export const UserTextModal: React.FC<UserTextModalProps> = ({
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex: Resumo de Biologia Celular"
+              placeholder={ui.user_text_ex_resumo_de_biologia_celular}
               className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
@@ -104,8 +104,8 @@ export const UserTextModal: React.FC<UserTextModalProps> = ({
               className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/20"
             >
               {CATEGORIES.map((cat) => (
-                <option key={cat.name} value={cat.name}>
-                  {cat.name}
+                <option key={t.categories[cat.name]?.name || cat.name} value={t.categories[cat.name]?.name || cat.name}>
+                  {t.categories[cat.name]?.name || cat.name}
                 </option>
               ))}
             </select>
@@ -120,7 +120,7 @@ export const UserTextModal: React.FC<UserTextModalProps> = ({
               required
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Digite ou cole aqui o conteúdo do texto..."
+              placeholder={ui.user_text_digite_ou_cole_aqui_o_conteudo}
               className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/20 resize-none font-sans"
             />
             <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">

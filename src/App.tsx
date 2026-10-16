@@ -1,3 +1,4 @@
+import { ui } from './i18n';
 /**
  * DigitaMente - Aplicação Principal
  */
@@ -18,15 +19,16 @@ import { SettingsModal } from './components/Settings/SettingsModal';
 import { useSettings } from './hooks/useSettings';
 import { useTypingEngine } from './hooks/useTypingEngine';
 import { storageService } from './services/storageService';
-import { SEED_TEXTS } from './data/seedTexts';
+import { getTexts } from './data/texts';
 import { 
   generateCommonWordsText, 
   generateAlphabetText, 
   generateNumbersText 
 } from './data/commonWords';
-import { normalizeText, removeDiacritics } from './utils/textNormalizer';
+import { normalizeText, removeDiacritics, removeInvertedMarks } from './utils/textNormalizer';
 import { soundService } from './services/soundService';
 import { 
+  normalizeCategory,
   TestType, 
   TestDurationMode, 
   TextCategory, 
@@ -78,56 +80,94 @@ export default function App() {
     let text = '';
     let studyObj: StudyText | null = null;
 
+    const currentLang = settings.language || 'pt-BR';
+    const langCode = currentLang.startsWith('pt') ? 'pt' : currentLang.startsWith('es') ? 'es' : 'en';
+
     if (customString) {
-      return { target: normalizeText(customString), studyObj: null };
+      let norm = normalizeText(customString);
+      if (currentLang === 'es' && settings.omitInvertedMarks) norm = removeInvertedMarks(norm);
+      return { target: norm, studyObj: null };
     }
 
-    if (type === 'custom') {
+    // Carrega pool da biblioteca para o idioma atual com filtros de escopo regional
+    const allLibTexts = getTexts(langCode);
+    const validLibTexts = langCode === 'pt'
+      ? allLibTexts
+      : allLibTexts.filter((item) => {
+          if (item.scope === 'regional') {
+            const c = normalizeCategory(item.category);
+            return c === 'curiosidades' || c === 'atualidades';
+          }
+          return true;
+        });
+
+    // Se o idioma não tiver textos na biblioteca e o tipo for 'library', cai automaticamente em 'common_words'
+    let effectiveType = type;
+    if (type === 'library' && !chosenStudyText && validLibTexts.length === 0) {
+      effectiveType = 'common_words';
+    }
+
+    if (effectiveType === 'custom') {
       text = 'Digite aqui o seu texto personalizado...';
-    } else if (type === 'common_words') {
+    } else if (effectiveType === 'common_words') {
       const count = durMode === 'words' ? Math.max(words, 30) : 120;
-      text = generateCommonWordsText(count, settings.includePunctuationInWords);
-    } else if (type === 'alphabet') {
-      text = generateAlphabetText(4);
-    } else if (type === 'numbers') {
+      text = generateCommonWordsText(count, settings.includePunctuationInWords, langCode);
+    } else if (effectiveType === 'alphabet') {
+      text = generateAlphabetText(4, langCode);
+    } else if (effectiveType === 'numbers') {
       text = generateNumbersText(25);
-    } else if (type === 'no_accents') {
-      // Pega um texto da biblioteca ou palavras e remove diacríticos
-      const pool = SEED_TEXTS;
-      const pick = pool[Math.floor(Math.random() * pool.length)];
-      text = removeDiacritics(pick.body);
+    } else if (effectiveType === 'no_accents') {
+      const pool = validLibTexts.length > 0 ? validLibTexts : storageService.getUserTexts();
+      if (pool.length > 0) {
+        const pick = pool[Math.floor(Math.random() * pool.length)];
+        text = removeDiacritics(pick.body ?? pick.text ?? '');
+      } else {
+        const wordsText = generateCommonWordsText(120, false, langCode);
+        text = removeDiacritics(wordsText);
+      }
     } else {
       // 'library'
       if (chosenStudyText) {
         studyObj = chosenStudyText;
-        text = chosenStudyText.body;
+        text = chosenStudyText.body ?? chosenStudyText.text ?? '';
       } else {
         const pool = (settings.includeAiAndUserInRandom ?? true)
-          ? [...storageService.getUserTexts(), ...SEED_TEXTS]
-          : [...SEED_TEXTS];
+          ? [...storageService.getUserTexts(), ...validLibTexts]
+          : [...validLibTexts];
         const filtered = cat === 'Aleatório'
           ? pool
-          : pool.filter((item) => item.category === cat);
+          : pool.filter((item) => normalizeCategory(item.category) === cat);
         const candidates = filtered.length > 0 ? filtered : pool;
-        const pick = storageService.getNextShuffleText(candidates) || candidates[0];
-        studyObj = pick;
-        text = pick.body;
+        if (candidates.length > 0) {
+          const pick = storageService.getNextShuffleText(candidates, langCode) || candidates[0];
+          studyObj = pick;
+          text = pick.body ?? pick.text ?? '';
+        } else {
+          text = generateCommonWordsText(120, settings.includePunctuationInWords, langCode);
+        }
       }
 
       // Se for modo por páginas (1 página ≈ 250 palavras), compõe textos adicionais da mesma área
-      if (durMode === 'pages' && pages > 1) {
-        const pool = SEED_TEXTS.filter((item) => cat === 'Aleatório' || item.category === cat);
-        let accumulated = text;
-        for (let p = 1; p < pages; p++) {
-          const next = pool[p % pool.length];
-          accumulated += ' ' + next.body;
+      if (durMode === 'pages' && pages > 1 && validLibTexts.length > 0) {
+        const pool = validLibTexts.filter((item) => cat === 'Aleatório' || normalizeCategory(item.category) === cat);
+        if (pool.length > 0) {
+          let accumulated = text;
+          for (let p = 1; p < pages; p++) {
+            const next = pool[p % pool.length];
+            accumulated += ' ' + (next.body ?? next.text ?? '');
+          }
+          text = accumulated;
         }
-        text = accumulated;
       }
     }
 
-    return { target: normalizeText(text), studyObj };
-  }, [settings.includePunctuationInWords, settings.includeAiAndUserInRandom]);
+    let normalized = normalizeText(text);
+    if (currentLang === 'es' && settings.omitInvertedMarks) {
+      normalized = removeInvertedMarks(normalized);
+    }
+
+    return { target: normalized, studyObj };
+  }, [settings.language, settings.omitInvertedMarks, settings.includePunctuationInWords, settings.includeAiAndUserInRandom]);
 
   // Inicializa o primeiro texto
   useEffect(() => {
@@ -154,14 +194,26 @@ export default function App() {
 
   // Anexar mais texto dinamicamente em testes com tempo (para o texto nunca acabar)
   const handleNeedMoreText = useCallback(() => {
+    const currentLang = settings.language || 'pt-BR';
+    const langCode = currentLang.startsWith('pt') ? 'pt' : currentLang.startsWith('es') ? 'es' : 'en';
     if (testType === 'common_words') {
-      const more = ' ' + generateCommonWordsText(40, settings.includePunctuationInWords);
+      let more = ' ' + generateCommonWordsText(40, settings.includePunctuationInWords, langCode);
+      if (currentLang === 'es' && settings.omitInvertedMarks) more = removeInvertedMarks(more);
       setRawTargetText((prev) => prev + more);
     } else {
-      const pool = SEED_TEXTS.filter((t) => category === 'Aleatório' || t.category === category);
-      const randomNext = pool[Math.floor(Math.random() * pool.length)] || SEED_TEXTS[0];
-      const appendStr = ' ' + (testType === 'no_accents' ? removeDiacritics(randomNext.body) : randomNext.body);
-      setRawTargetText((prev) => prev + appendStr);
+      const validLibTexts = getTexts(langCode);
+      if (validLibTexts.length > 0) {
+        const pool = validLibTexts.filter((t) => category === 'Aleatório' || normalizeCategory(t.category) === category);
+        const randomNext = pool[Math.floor(Math.random() * pool.length)] || validLibTexts[0];
+        let bodyStr = randomNext.body ?? randomNext.text ?? '';
+        if (currentLang === 'es' && settings.omitInvertedMarks) bodyStr = removeInvertedMarks(bodyStr);
+        const appendStr = ' ' + (testType === 'no_accents' ? removeDiacritics(bodyStr) : bodyStr);
+        setRawTargetText((prev) => prev + appendStr);
+      } else {
+        let moreWords = ' ' + generateCommonWordsText(30, settings.includePunctuationInWords, langCode);
+        if (currentLang === 'es' && settings.omitInvertedMarks) moreWords = removeInvertedMarks(moreWords);
+        setRawTargetText((prev) => prev + moreWords);
+      }
     }
   }, [testType, category, settings.includePunctuationInWords]);
 
@@ -173,9 +225,10 @@ export default function App() {
     durationMode,
     timeLimitSeconds: timeSeconds,
     wordLimit: wordCount,
-    category: currentStudyText?.category || (category !== 'Aleatório' ? category : undefined),
+    category: currentStudyText ? normalizeCategory(currentStudyText.category) : (category !== 'Aleatório' ? category : undefined),
     textTitle: currentStudyText?.title,
     textId: currentStudyText?.id,
+    lang: currentStudyText?.lang || (settings.language?.startsWith('pt') ? 'pt' : settings.language?.startsWith('es') ? 'es' : 'en'),
     isStudyMode,
     onNeedMoreText: handleNeedMoreText,
     onFinish: handleTestFinish,
@@ -215,6 +268,17 @@ export default function App() {
     setIsNewRecord(false);
     engineRef.current.restartTest();
   }, []);
+
+  // Ao trocar o idioma durante o teste, reinicia o teste com texto do novo idioma
+  const prevLangRef = useRef(settings.language);
+  useEffect(() => {
+    if (prevLangRef.current && prevLangRef.current !== settings.language) {
+      prevLangRef.current = settings.language;
+      startNewText();
+    } else {
+      prevLangRef.current = settings.language;
+    }
+  }, [settings.language, startNewText]);
 
   // Atalho global Tab -> Enter para novo texto e listener global de foco/digitação
   useEffect(() => {
@@ -473,7 +537,7 @@ export default function App() {
   const isUiFaded = settings.hideUiOnTyping && engine.isRunning && !engine.isFinished && !mouseAwakeOnTyping;
 
   return (
-    <div className="min-h-screen flex flex-col bg-app text-ink transition-colors">
+    <div key={settings.language} className="min-h-screen flex flex-col bg-app text-ink transition-colors">
       
       {/* Cabeçalho */}
       <Header
@@ -606,7 +670,7 @@ export default function App() {
                         }, 0);
                       }}
                       className="w-[140px] h-[40px] inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-xs cursor-pointer whitespace-nowrap text-xs font-medium"
-                      title="Reiniciar (Esc)"
+                      title={ui.app_reiniciar_esc}
                     >
                       <RotateCcw className="w-4 h-4 shrink-0" />
                       <span>{t.typingArea.restart}</span>
@@ -620,7 +684,7 @@ export default function App() {
                         }, 0);
                       }}
                       className="w-[140px] h-[40px] inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-xs cursor-pointer whitespace-nowrap text-xs font-medium"
-                      title="Novo texto (Tab + Enter)"
+                      title={ui.app_novo_texto_tab_enter}
                     >
                       <Shuffle className="w-4 h-4 shrink-0" />
                       <span>{t.typingArea.newText}</span>

@@ -12,20 +12,23 @@ import {
   Check,
   X
 } from 'lucide-react';
-import { StudyText, TextCategory, TextLevel } from '../../types';
+import { StudyText, TextCategory, TextLevel, normalizeCategory } from '../../types';
 import { CATEGORIES } from '../../data/categories';
-import { SEED_TEXTS } from '../../data/seedTexts';
+import { getTexts } from '../../data/texts';
 import { storageService } from '../../services/storageService';
 import { normalizeText } from '../../utils/textNormalizer';
-import { t } from '../../i18n';
+import { t , ui } from '../../i18n';
 
 interface LibraryViewProps {
   onSelectText: (text: StudyText) => void;
 }
 
 export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
+  const currentSettings = storageService.getSettings();
+  const currentLang = currentSettings.language || 'pt-BR';
+  const langCode = currentLang.startsWith('pt') ? 'pt' : currentLang.startsWith('es') ? 'es' : 'en';
   // Tabs da biblioteca
-  const [activeTab, setActiveTab] = useState<'all' | 'news' | 'my_texts' | 'add_text'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'my_texts' | 'add_text'>('all');
 
   // Filtros e busca
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,13 +49,29 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
 
   // Formulário da aba "Adicionar texto" (Texto próprio do usuário)
   const [customTitle, setCustomTitle] = useState('');
-  const [customCategory, setCustomCategory] = useState<TextCategory>('Estudos');
+  const [customCategory, setCustomCategory] = useState<TextCategory>('ciencia');
   const [customBody, setCustomBody] = useState('');
 
-  // Todos os textos disponíveis (textos próprios e biblioteca local)
+  // Textos da biblioteca por idioma filtrados por scope
+  const libraryTexts = useMemo(() => {
+    const rawList = getTexts(langCode);
+    if (langCode === 'pt') {
+      return rawList;
+    }
+    // Em 'en' e 'es', exclui textos 'regional', exceto das categorias 'curiosidades' e 'atualidades'
+    return rawList.filter((item) => {
+      if (item.scope === 'regional') {
+        const cat = normalizeCategory(item.category);
+        return cat === 'curiosidades' || cat === 'atualidades';
+      }
+      return true;
+    });
+  }, [langCode]);
+
+  // "Meus textos" aparecem em qualquer idioma
   const allTexts = useMemo(() => {
-    return [...userTexts, ...SEED_TEXTS];
-  }, [userTexts]);
+    return [...userTexts, ...libraryTexts];
+  }, [userTexts, libraryTexts]);
 
   const handleToggleFavorite = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -63,7 +82,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
   // Exclusão de texto com confirmação
   const handleDeleteText = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm('Tem certeza de que deseja excluir este texto permanentemente?')) {
+    if (window.confirm(ui.library_tem_certeza_de_que_deseja_excl)) {
       const updated = storageService.deleteUserText(id);
       setUserTexts(updated);
     }
@@ -116,8 +135,6 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
     let list: StudyText[] = [];
     if (activeTab === 'my_texts') {
       list = userTexts;
-    } else if (activeTab === 'news') {
-      list = SEED_TEXTS.filter((t) => t.category === 'atualidades' || (t.category as string) === 'Notícias');
     } else {
       // 'all'
       list = allTexts;
@@ -127,10 +144,11 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchTitle = item.title.toLowerCase().includes(q);
-        const matchBody = item.body.toLowerCase().includes(q);
+        const matchBody = (item.body ?? item.text ?? '').toLowerCase().includes(q);
         if (!matchTitle && !matchBody) return false;
       }
-      if (selectedCategory !== 'all' && item.category !== selectedCategory) {
+      const itemCategory = normalizeCategory(item.category);
+      if (selectedCategory !== 'all' && itemCategory !== selectedCategory) {
         return false;
       }
       if (selectedLevel !== 'all' && item.level !== selectedLevel) {
@@ -171,17 +189,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
           Todos ({allTexts.length})
         </button>
 
-        <button
-          onClick={() => setActiveTab('news')}
-          className={`pb-2.5 px-2.5 font-medium transition-colors cursor-pointer whitespace-nowrap border-b-2 flex items-center gap-1.5 ${
-            activeTab === 'news'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-          }`}
-        >
-          <Newspaper className="w-3.5 h-3.5" />
-          <span>Notícias</span>
-        </button>
+
 
         <button
           onClick={() => setActiveTab('my_texts')}
@@ -203,7 +211,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
           }`}
         >
           <Plus className="w-3.5 h-3.5" />
-          <span>Adicionar texto</span>
+          <span>{ui.library_adicionar_texto}</span>
         </button>
       </div>
 
@@ -229,7 +237,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                 required
                 value={customTitle}
                 onChange={(e) => setCustomTitle(e.target.value)}
-                placeholder="Ex: Resumo de Biologia, Minha Anotação..."
+                placeholder={ui.library_ex_resumo_de_biologia_minha_an}
                 className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
               />
             </div>
@@ -244,7 +252,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                 className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
               >
                 {CATEGORIES.map((c) => (
-                  <option key={c.name} value={c.name}>{c.name}</option>
+                  <option key={c.name} value={c.name}>{t.categories[c.name]?.name || c.name}</option>
                 ))}
               </select>
             </div>
@@ -258,7 +266,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                 required
                 value={customBody}
                 onChange={(e) => setCustomBody(e.target.value)}
-                placeholder="Cole aqui seu parágrafo ou artigo..."
+                placeholder={ui.library_cole_aqui_seu_paragrafo_ou_art}
                 className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none resize-none font-sans"
               />
             </div>
@@ -269,7 +277,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
               className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer"
             >
               <Check className="w-4 h-4" />
-              <span>Salvar Texto na Minha Biblioteca</span>
+              <span>{ui.library_salvar_texto_na_minha_bibliote}</span>
             </button>
           </form>
         </div>
@@ -287,7 +295,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar por título..."
+                placeholder={ui.library_buscar_por_titulo}
                 className="w-full pl-8 pr-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-transparent focus:border-slate-300 dark:focus:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none"
               />
             </div>
@@ -299,9 +307,9 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                   onChange={(e) => setSelectedCategory(e.target.value as any)}
                   className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-700 dark:text-slate-300 outline-none"
                 >
-                  <option value="all">Todas as áreas</option>
+                  <option value="all">{ui.library_todas_as_areas}</option>
                   {CATEGORIES.map((c) => (
-                    <option key={c.name} value={c.name}>{c.name}</option>
+                    <option key={c.name} value={c.name}>{t.categories[c.name]?.name || c.name}</option>
                   ))}
                 </select>
               )}
@@ -311,10 +319,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                 onChange={(e) => setSelectedLevel(e.target.value as any)}
                 className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-700 dark:text-slate-300 outline-none"
               >
-                <option value="all">Todos os tamanhos</option>
-                <option value="curto">Curto (~60 pal.)</option>
-                <option value="médio">Médio (~150 pal.)</option>
-                <option value="longo">Longo (~280 pal.)</option>
+                <option value="all">{t.library.allLevels}</option>
+                <option value="curto">{t.library.levels.curto} (~60 pal.)</option>
+                <option value="médio">{t.library.levels['médio']} (~150 pal.)</option>
+                <option value="longo">{t.library.levels.longo} (~280 pal.)</option>
               </select>
 
               <button
@@ -326,20 +334,30 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                 }`}
               >
                 <Star className={`w-3.5 h-3.5 ${favoritesOnly ? 'fill-amber-400 text-amber-400' : ''}`} />
-                <span>Favoritos</span>
+                <span>{ui.library_favoritos}</span>
               </button>
             </div>
           </div>
 
           {/* Grade de Textos */}
-          {displayedTexts.length === 0 ? (
+          {libraryTexts.length === 0 && activeTab === 'all' && userTexts.length === 0 ? (
             <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-12 text-center space-y-2">
               <BookOpen className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
               <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">
-                Nenhum texto encontrado
+                {t.library.emptyLanguageTitle}
+              </h3>
+              <p className="text-xs text-slate-400 max-w-md mx-auto">
+                {t.library.emptyLanguageDesc}
+              </p>
+            </div>
+          ) : displayedTexts.length === 0 ? (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-12 text-center space-y-2">
+              <BookOpen className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
+              <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">
+                {t.library.emptyTitle}
               </h3>
               <p className="text-xs text-slate-400">
-                Tente ajustar os filtros de busca ou adicione um novo texto.
+                {t.library.emptyDesc}
               </p>
             </div>
           ) : (
@@ -361,21 +379,23 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                       <div className="flex items-center justify-between text-[11px] text-slate-400">
                         <div className="flex items-center gap-1.5 truncate">
                           <span className="font-semibold text-slate-600 dark:text-slate-300">
-                            {text.category}
+                            {t.categories[normalizeCategory(text.category)]?.name || text.category}
                           </span>
                           <span aria-hidden="true">·</span>
-                          {text.sourceType === 'usuario' ? (
-                            <span className="font-medium text-emerald-500">Meu texto</span>
+                          {text.sourceType === 'ia' ? (
+                            <span className="font-medium text-indigo-500 dark:text-indigo-400">{t.library.sourceIa}</span>
+                          ) : text.sourceType === 'usuario' ? (
+                            <span className="font-medium text-emerald-500">{t.library.sourceUser}</span>
                           ) : text.sourceType === 'real' ? (
-                            <span className="font-medium text-amber-500">Domínio Público</span>
+                            <span className="font-medium text-amber-500">{t.library.sourceReal}</span>
                           ) : (
-                            <span className="font-medium text-slate-400">Texto editorial</span>
+                            <span className="font-medium text-slate-400">{t.library.sourceEditorial}</span>
                           )}
                         </div>
                         <button
                           onClick={(e) => handleToggleFavorite(text.id, e)}
                           className="p-1 text-slate-300 hover:text-amber-400 transition-colors"
-                          title="Favoritar"
+                          title={ui.library_favoritar}
                         >
                           <Star className={`w-3.5 h-3.5 ${isFav ? 'fill-amber-400 text-amber-400' : ''}`} />
                         </button>
@@ -413,7 +433,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
 
                       {/* Excerto */}
                       <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                        {text.body}
+                        {text.body ?? text.text ?? ''}
                       </p>
                     </div>
 
@@ -430,14 +450,14 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                           <button
                             onClick={(e) => handleStartRename(text.id, text.title, e)}
                             className="p-1 text-slate-400 hover:text-blue-500 rounded"
-                            title="Renomear título"
+                            title={ui.library_renomear_titulo}
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={(e) => handleDeleteText(text.id, e)}
                             className="p-1 text-slate-400 hover:text-rose-500 rounded"
-                            title="Excluir"
+                            title={ui.library_excluir}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -450,7 +470,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                         </div>
                       ) : (
                         <span className="text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1 group-hover:underline">
-                          <span>Digitar</span>
+                          <span>{ui.library_digitar}</span>
                           <Play className="w-3 h-3 fill-current" />
                         </span>
                       )}
@@ -479,9 +499,9 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                   {previewText.title}
                 </h3>
                 <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
-                  <span>{previewText.category}</span>
+                  <span>{t.categories[normalizeCategory(previewText.category)]?.name || previewText.category}</span>
                   <span>·</span>
-                  <span>{previewText.wordCount} palavras</span>
+                  <span>{previewText.wordCount} {t.library.words}</span>
                   {previewText.sourceName && (
                     <>
                       <span>·</span>
@@ -499,7 +519,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl text-slate-700 dark:text-slate-300 text-sm leading-relaxed max-h-56 overflow-y-auto">
-              {previewText.body}
+              {previewText.body ?? previewText.text ?? ''}
             </div>
 
             {previewText.keyPoints && previewText.keyPoints.length > 0 && (
@@ -533,7 +553,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectText }) => {
                 className="flex items-center gap-1.5 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
               >
                 <Play className="w-3.5 h-3.5 fill-white" />
-                <span>Digitar este texto</span>
+                <span>{ui.library_digitar_este_texto}</span>
               </button>
             </div>
           </div>

@@ -25,13 +25,14 @@ import {
 import { storageService } from '../../services/storageService';
 import { TestResult, UserStats, PersonalBest } from '../../types';
 import { formatTime } from '../../utils/metrics';
-import { t } from '../../i18n';
+import { t , ui } from '../../i18n';
 
 interface StatsViewProps {
   onStartNewTest: () => void;
 }
 
 export const StatsView: React.FC<StatsViewProps> = ({ onStartNewTest }) => {
+  const currentLang = storageService.getSettings().language || 'pt-BR';
   const [history, setHistory] = useState<TestResult[]>(() => storageService.getHistory());
   const [stats, setStats] = useState<UserStats>(() => storageService.getStats());
   const [personalBests, setPersonalBests] = useState<Record<string, PersonalBest>>(() => 
@@ -60,7 +61,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ onStartNewTest }) => {
   const chartData = useMemo(() => {
     return [...history].reverse().map((item, index) => ({
       index: index + 1,
-      date: new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+      date: new Date(item.date).toLocaleDateString(currentLang, { day: '2-digit', month: '2-digit' }),
       wpm: item.netWpm,
       accuracy: item.accuracy,
     }));
@@ -198,7 +199,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ onStartNewTest }) => {
                   <Line 
                     type="monotone" 
                     dataKey="wpm" 
-                    name="WPM Líquido" 
+                    name={ui.stats_wpm_liquido} 
                     stroke="#3b82f6" 
                     strokeWidth={2.5} 
                     dot={{ r: 3 }} 
@@ -232,7 +233,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ onStartNewTest }) => {
                   <Line 
                     type="monotone" 
                     dataKey="accuracy" 
-                    name="Precisão (%)" 
+                    name={ui.stats_precisao} 
                     stroke="#10b981" 
                     strokeWidth={2.5} 
                     dot={{ r: 3 }} 
@@ -296,7 +297,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ onStartNewTest }) => {
                 return (
                   <div key={cat} className="space-y-1">
                     <div className="flex justify-between font-medium">
-                      <span className="text-slate-700 dark:text-slate-300">{cat}</span>
+                      <span className="text-slate-700 dark:text-slate-300">{t.categories[cat as any]?.name || cat}</span>
                       <span className="font-bold text-emerald-600 dark:text-emerald-400">
                         {score.correct}/{score.totalQuestions} ({percent}%)
                       </span>
@@ -328,11 +329,11 @@ export const StatsView: React.FC<StatsViewProps> = ({ onStartNewTest }) => {
             onChange={(e) => setFilterMode(e.target.value)}
             className="text-xs px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 outline-none"
           >
-            <option value="all">Todos os modos</option>
-            <option value="time">Por Tempo</option>
-            <option value="words">Por Palavras</option>
-            <option value="pages">Por Páginas</option>
-            <option value="library">Biblioteca</option>
+            <option value="all">{ui.stats_todos_os_modos}</option>
+            <option value="time">{ui.stats_por_tempo}</option>
+            <option value="words">{ui.stats_por_palavras}</option>
+            <option value="pages">{ui.stats_por_paginas}</option>
+            <option value="library">{ui.stats_biblioteca}</option>
             <option value="common_words">Palavras comuns</option>
           </select>
         </div>
@@ -368,7 +369,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ onStartNewTest }) => {
                 {filteredHistory.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                     <td className="py-2.5 px-3 text-slate-500">
-                      {new Date(item.date).toLocaleDateString('pt-BR', {
+                      {new Date(item.date).toLocaleDateString(currentLang, {
                         day: '2-digit',
                         month: '2-digit',
                         hour: '2-digit',
@@ -379,7 +380,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ onStartNewTest }) => {
                       {item.durationMode === 'time' ? `${item.elapsedSeconds}s` : item.durationMode}
                     </td>
                     <td className="py-2.5 px-3 text-slate-500">
-                      {item.category || item.testType}
+                      {item.category ? (t.categories[item.category as any]?.name || item.category) : item.testType}
                     </td>
                     <td className="py-2.5 px-3 font-bold text-blue-600 dark:text-blue-400 font-mono">
                       {item.netWpm}

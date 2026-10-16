@@ -10,25 +10,49 @@ export type TestType =
   | 'numbers'       // Sequências numéricas
   | 'custom';       // Texto colado pelo usuário
 
+export type Language = 'pt-BR' | 'en' | 'es';
+
 export type TestDurationMode = 'time' | 'words' | 'pages' | 'full_text';
 
 export type TextCategory = 
   | 'ciencia'
-  | 'literatura'
-  | 'tecnologia'
   | 'natureza'
-  | 'filosofia'
+  | 'tecnologia'
+  | 'saude'
+  | 'sociedade'
   | 'historia'
-  | 'atualidades'
-  // Categorias legadas mantidas
-  | 'Notícias'
-  | 'Atualidades'
-  | 'Estudos'
-  | 'Curiosidades'
-  | 'Tecnologia'
-  | 'Saúde e Bem-estar'
-  | 'Negócios e Finanças'
-  | 'Literatura clássica';
+  | 'economia'
+  | 'literatura'
+  | 'curiosidades'
+  | 'atualidades';
+
+export function normalizeCategory(raw: string | undefined | null): TextCategory {
+  if (!raw) return 'curiosidades';
+  const val = String(raw).trim();
+  switch (val) {
+    case 'ciencia': return 'ciencia';
+    case 'natureza': return 'natureza';
+    case 'tecnologia': return 'tecnologia';
+    case 'saude': return 'saude';
+    case 'sociedade': return 'sociedade';
+    case 'filosofia': return 'sociedade';
+    case 'historia': return 'historia';
+    case 'economia': return 'economia';
+    case 'literatura': return 'literatura';
+    case 'curiosidades': return 'curiosidades';
+    case 'atualidades': return 'atualidades';
+    // Mapeamento de compatibilidade de categorias legadas:
+    case 'Notícias': return 'atualidades';
+    case 'Atualidades': return 'atualidades';
+    case 'Estudos': return 'ciencia';
+    case 'Curiosidades': return 'curiosidades';
+    case 'Tecnologia': return 'tecnologia';
+    case 'Saúde e Bem-estar': return 'saude';
+    case 'Negócios e Finanças': return 'economia';
+    case 'Literatura clássica': return 'literatura';
+    default: return 'curiosidades';
+  }
+}
 
 export type TextDifficulty = 'facil' | 'medio' | 'dificil';
 export type TextOrigin = 'universal' | 'br-specific';
@@ -67,6 +91,9 @@ export interface StudyText extends Partial<Text> {
   difficulty?: TextDifficulty;
   origin?: TextOrigin;
   locale?: TextLocale;
+  scope?: 'global' | 'regional';
+  region?: string;
+  groupId?: string;
   sourceType: SourceType;
   sourceName?: string;
   sourceUrl?: string;
@@ -75,6 +102,21 @@ export interface StudyText extends Partial<Text> {
   quiz?: QuizQuestion[];
   isFavorite?: boolean;
   createdAt?: string;
+}
+
+export function normalizeStudyText(raw: StudyText): StudyText {
+  const normCategory = normalizeCategory(raw.category);
+  const scope = raw.scope ?? (raw.origin === 'br-specific' ? 'regional' : 'global');
+  const region = raw.region ?? (scope === 'regional' ? 'BR' : undefined);
+  const body = raw.body ?? raw.text ?? '';
+  return {
+    ...raw,
+    category: normCategory,
+    scope,
+    region,
+    body,
+    text: body,
+  };
 }
 
 export type ErrorBehavior = 'free' | 'stop_on_error' | 'require_word_correction';
@@ -94,6 +136,8 @@ export interface Settings {
   allowBackspace: boolean;
   blockPastWords: boolean;
   includePunctuationInWords: boolean;
+  omitInvertedMarks: boolean;
+  language: Language;
 
   // Feedback sonoro
   soundEnabled: boolean;
@@ -166,6 +210,7 @@ export interface TestResult {
   category?: string;
   textTitle?: string;
   textId?: string;
+  lang?: string;
 
   // Métricas principais
   elapsedSeconds: number;

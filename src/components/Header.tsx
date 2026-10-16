@@ -9,7 +9,8 @@ import {
   Globe
 } from 'lucide-react';
 import { APP_NAME } from '../constants';
-import { t, AVAILABLE_LANGUAGES } from '../i18n';
+import { t , ui } from '../i18n';
+import { Language } from '../types';
 import { Settings } from '../types';
 
 export type ActiveTab = 'test' | 'library' | 'stats' | 'settings';
@@ -175,35 +176,42 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={() => setLangDropdownOpen(!langDropdownOpen)}
               className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
-              title="Idioma"
+              title={ui.header_idioma}
             >
               <Globe className="w-4 h-4" />
             </button>
 
             {langDropdownOpen && (
               <div className="absolute right-0 mt-1.5 w-44 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 py-1.5 z-50 text-xs">
-                {AVAILABLE_LANGUAGES.map((lang) => (
-                  <button
-                    key={lang.code}
-                    disabled={!lang.active}
-                    onClick={() => setLangDropdownOpen(false)}
-                    className={`w-full px-3 py-2 text-left flex items-center justify-between ${
-                      lang.active 
-                        ? 'text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium cursor-pointer' 
-                        : 'text-slate-400 dark:text-slate-600 cursor-not-allowed opacity-60'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <span>{lang.flag}</span>
-                      <span>{lang.label}</span>
-                    </span>
-                    {!lang.active && (
-                      <span className="text-[10px] text-slate-400 dark:text-slate-600 italic">
-                        {t.nav.comingSoon}
+                {([
+                  { code: 'pt-BR' as Language, label: t.languages['pt-BR'], flag: '🇧🇷' },
+                  { code: 'en' as Language, label: t.languages.en, flag: '🇺🇸' },
+                  { code: 'es' as Language, label: t.languages.es, flag: '🇪🇸' },
+                ]).map((lang) => {
+                  const isCurrent = settings.language === lang.code;
+                  return (
+                    <button
+                      key={lang.code}
+                      onClick={() => {
+                        onUpdateSettings({ language: lang.code });
+                        setLangDropdownOpen(false);
+                      }}
+                      className={`w-full px-3 py-2 text-left flex items-center justify-between transition-colors cursor-pointer ${
+                        isCurrent
+                          ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-bold'
+                          : 'text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span>{lang.flag}</span>
+                        <span>{lang.label}</span>
                       </span>
-                    )}
-                  </button>
-                ))}
+                      {isCurrent && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -216,7 +224,7 @@ export const Header: React.FC<HeaderProps> = ({
                 ? 'text-blue-600 dark:text-blue-400' 
                 : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
-            title="Configurações"
+            title={ui.header_configuracoes}
           >
             <SettingsIcon className="w-4 h-4" />
           </button>

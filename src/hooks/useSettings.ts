@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Settings } from '../types';
 import { storageService, DEFAULT_SETTINGS } from '../services/storageService';
 import { soundService } from '../services/soundService';
+import { setLanguage } from '../i18n';
 
 export function useSettings() {
   const [settings, setSettings] = useState<Settings>(() => storageService.getSettings());
@@ -22,6 +23,13 @@ export function useSettings() {
     settings.keySoundProfile,
     settings.errorSoundProfile,
   ]);
+
+  // Sincroniza idioma ativo no i18n
+  useEffect(() => {
+    if (settings.language) {
+      setLanguage(settings.language);
+    }
+  }, [settings.language]);
 
   // Aplica classe de tema e data-theme ao documento HTML
   useEffect(() => {

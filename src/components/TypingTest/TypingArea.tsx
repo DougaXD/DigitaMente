@@ -6,7 +6,7 @@ import {
 import { Settings, StudyText } from '../../types';
 import { GhostError } from '../../hooks/useTypingEngine';
 import { useCapsLock } from '../../hooks/useCapsLock';
-import { t } from '../../i18n';
+import { t, ui } from '../../i18n';
 
 interface TypingAreaProps {
   targetText: string;
@@ -408,7 +408,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
           autoCorrect="off"
           autoCapitalize="off"
           className="absolute -top-[9999px] -left-[9999px] opacity-0 w-1 h-1"
-          aria-label="Entrada de digitação"
+          aria-label={ui.typing_area_entrada_de_digitacao}
         />
 
         {/* Aviso de Caps Lock Ativado (Posicionado de forma absoluta por cima, sem empurrar a caixa) */}

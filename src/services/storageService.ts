@@ -6,7 +6,7 @@
  * e exportação/importação integral.
  */
 
-import { Settings, TestResult, StudyText, PersonalBest, UserStats } from '../types';
+import { Settings, TestResult, StudyText, PersonalBest, UserStats, normalizeCategory } from '../types';
 
 const STORAGE_KEYS = {
   SETTINGS: 'digitamente_settings_v1',
@@ -20,6 +20,16 @@ const STORAGE_KEYS = {
   SHUFFLE_BAG: 'digitaMente:shuffleBag:v1',
 };
 
+function detectBrowserLanguage(): 'pt-BR' | 'en' | 'es' {
+  if (typeof navigator !== 'undefined' && navigator.language) {
+    const l = navigator.language.toLowerCase();
+    if (l.startsWith('pt')) return 'pt-BR';
+    if (l.startsWith('es')) return 'es';
+    if (l.startsWith('en')) return 'en';
+  }
+  return 'en';
+}
+
 export const DEFAULT_SETTINGS: Settings = {
   settingsVersion: 2,
 
@@ -28,6 +38,8 @@ export const DEFAULT_SETTINGS: Settings = {
   allowBackspace: true,
   blockPastWords: false,
   includePunctuationInWords: false,
+  omitInvertedMarks: false,
+  language: detectBrowserLanguage(),
 
   // Feedback sonoro
   soundEnabled: true,
@@ -114,7 +126,11 @@ export const storageService = {
           return migrated;
         }
 
-        return { ...DEFAULT_SETTINGS, ...parsed };
+        const loaded = { ...DEFAULT_SETTINGS, ...parsed };
+        if (!parsed.language) {
+          loaded.language = 'pt-BR';
+        }
+        return loaded;
       }
     } catch (e) {
       console.warn('Erro ao carregar configurações do localStorage:', e);
@@ -172,8 +188,7 @@ export const storageService = {
       const stored = localStorage.getItem(STORAGE_KEYS.USER_TEXTS);
       let texts: StudyText[] = stored ? JSON.parse(stored) : [];
 
-      // Migração e normalização de textos legados de IA para tipo 'usuario'
-      // Preserva dados sem deletar nenhum texto do usuário
+      // Preserva e migra textos legados de IA para a lista do usuário mantendo sourceType original 'ia'
       const aiStored = localStorage.getItem(STORAGE_KEYS.AI_TEXTS);
       if (aiStored) {
         try {
@@ -182,8 +197,9 @@ export const storageService = {
             const existingIds = new Set(texts.map((t) => t.id));
             const convertedAiTexts = aiParsed.map((item) => ({
               ...item,
-              sourceType: 'usuario' as const,
-              sourceName: item.sourceName || 'Texto Importado',
+              sourceType: (item.sourceType === 'ia' ? 'ia' : 'usuario') as any,
+              sourceName: item.sourceName || 'Texto Gerado por IA',
+              category: normalizeCategory(item.category),
             }));
             for (const item of convertedAiTexts) {
               if (!existingIds.has(item.id)) {
@@ -199,12 +215,13 @@ export const storageService = {
         }
       }
 
-      // Normaliza qualquer flag de origem de IA existente nos próprios textos salvos
+      // Normaliza categoria dos textos do usuário
       let needsSave = false;
       const normalized = texts.map((t) => {
-        if ((t.sourceType as string) === 'ia') {
+        const normCat = normalizeCategory(t.category);
+        if (normCat !== t.category) {
           needsSave = true;
-          return { ...t, sourceType: 'usuario' as const, sourceName: t.sourceName || 'Meu texto' };
+          return { ...t, category: normCat };
         }
         return t;
       });
@@ -220,6 +237,7 @@ export const storageService = {
   },
 
   saveUserText(text: StudyText): StudyText[] {
+    text = { ...text, category: normalizeCategory(text.category) };
     const texts = this.getUserTexts();
     const existingIndex = texts.findIndex((t) => t.id === text.id);
     let updated: StudyText[];
@@ -332,7 +350,11 @@ export const storageService = {
         if (!item || !item.id) continue;
         if (!seen.has(item.id)) {
           seen.add(item.id);
-          deduplicated.push(item);
+          deduplicated.push({
+            ...item,
+            lang: item.lang || 'pt',
+            category: item.category ? normalizeCategory(item.category) : undefined,
+          });
         } else {
           hasDuplicates = true;
         }
@@ -377,6 +399,7 @@ export const storageService = {
   },
 
   saveResult(result: TestResult): { isNewRecord: boolean } {
+    result = { ...result, lang: result.lang || 'pt' };
     try {
       const history = this.getHistory();
       // Salva de forma estritamente idempotente (ignora se id já existe)
@@ -451,7 +474,23 @@ export const storageService = {
   getStats(): UserStats {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.STATS);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed: UserStats = JSON.parse(stored);
+        if (parsed.quizScoresByCategory) {
+          const normalizedScores: Record<string, any> = {};
+          for (const [k, v] of Object.entries(parsed.quizScoresByCategory)) {
+            const normCat = normalizeCategory(k);
+            if (!normalizedScores[normCat]) {
+              normalizedScores[normCat] = { attempts: 0, correct: 0, totalQuestions: 0 };
+            }
+            normalizedScores[normCat].attempts += (v as any).attempts || 0;
+            normalizedScores[normCat].correct += (v as any).correct || 0;
+            normalizedScores[normCat].totalQuestions += (v as any).totalQuestions || 0;
+          }
+          parsed.quizScoresByCategory = normalizedScores;
+        }
+        return parsed;
+      }
     } catch (e) {
       console.warn('Erro ao carregar estatísticas:', e);
     }
@@ -508,7 +547,7 @@ export const storageService = {
       // Quiz por categoria
       const quizScores = { ...stats.quizScoresByCategory };
       if (result.isStudyMode && result.quizScore && result.category) {
-        const cat = result.category;
+        const cat = normalizeCategory(result.category);
         const currentCat = quizScores[cat] || { attempts: 0, correct: 0, totalQuestions: 0 };
         quizScores[cat] = {
           attempts: currentCat.attempts + 1,
@@ -556,9 +595,13 @@ export const storageService = {
   },
 
   // Shuffle Bag (Playlist Aleatória tipo Spotify para evitar repetições consecutivas)
-  getShuffleBagState(): { bag: string[]; lastTextId: string | null } {
+  getShuffleBagKey(lang: string = 'pt'): string {
+    return `${STORAGE_KEYS.SHUFFLE_BAG}:${lang}`;
+  },
+
+  getShuffleBagState(lang: string = 'pt'): { bag: string[]; lastTextId: string | null } {
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.SHUFFLE_BAG);
+      const stored = localStorage.getItem(this.getShuffleBagKey(lang));
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed?.bag)) {
@@ -574,9 +617,9 @@ export const storageService = {
     return { bag: [], lastTextId: null };
   },
 
-  saveShuffleBagState(state: { bag: string[]; lastTextId: string | null }): void {
+  saveShuffleBagState(state: { bag: string[]; lastTextId: string | null }, lang: string = 'pt'): void {
     try {
-      localStorage.setItem(STORAGE_KEYS.SHUFFLE_BAG, JSON.stringify(state));
+      localStorage.setItem(this.getShuffleBagKey(lang), JSON.stringify(state));
     } catch (e) {
       console.error('Erro ao salvar estado da shuffle bag:', e);
     }
@@ -587,7 +630,7 @@ export const storageService = {
    * Ao esgotar o pool, reembaralha automaticamente com Fisher-Yates,
    * garantindo que nunca repita o mesmo texto duas vezes seguidas inclusive na virada do baralho.
    */
-  getNextShuffleText(pool: StudyText[]): StudyText | null {
+  getNextShuffleText(pool: StudyText[], lang: string = 'pt'): StudyText | null {
     if (!pool || pool.length === 0) return null;
     if (pool.length === 1) return pool[0];
 
@@ -612,9 +655,10 @@ export const storageService = {
       return arr;
     };
 
-    const currentState = this.getShuffleBagState();
+    const currentState = this.getShuffleBagState(lang);
+    // Reconcilia e descarta quaisquer IDs que não pertencem ao pool atual
     let currentBag = currentState.bag.filter((id) => poolMap.has(id));
-    let lastId = currentState.lastTextId;
+    let lastId = currentState.lastTextId && poolMap.has(currentState.lastTextId) ? currentState.lastTextId : null;
 
     if (currentBag.length === 0) {
       let fresh = shuffleArray(poolIds);
@@ -630,7 +674,7 @@ export const storageService = {
     this.saveShuffleBagState({
       bag: currentBag,
       lastTextId: nextId,
-    });
+    }, lang);
 
     return poolMap.get(nextId) || pool[0];
   },

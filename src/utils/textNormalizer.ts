@@ -53,7 +53,9 @@ export function removeDiacritics(text: string): string {
     .replace(/[\u0300-\u036f]/g, '')
     // Trata cedilha e outros caracteres que podem não decompor inteiramente
     .replace(/ç/g, 'c')
-    .replace(/Ç/g, 'C');
+    .replace(/Ç/g, 'C')
+    .replace(/ñ/g, 'n')
+    .replace(/Ñ/g, 'N');
 }
 
 /**
@@ -62,4 +64,12 @@ export function removeDiacritics(text: string): string {
 export function splitTextIntoWords(text: string): string[] {
   if (!text) return [];
   return text.split(' ').filter(Boolean);
+}
+
+/**
+ * Remove sinais invertidos de abertura ¿ e ¡ (para espanhol quando omitInvertedMarks ativo)
+ */
+export function removeInvertedMarks(text: string): string {
+  if (!text) return '';
+  return text.replace(/[¿¡]/g, '');
 }

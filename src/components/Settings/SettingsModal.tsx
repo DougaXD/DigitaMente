@@ -29,7 +29,7 @@ import {
 } from '../../types';
 import { soundService } from '../../services/soundService';
 import { ShortcutsInfo } from './ShortcutsInfo';
-import { t } from '../../i18n';
+import { t , ui } from '../../i18n';
 
 interface SettingsModalProps {
   settings: Settings;
@@ -67,7 +67,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         const parsed = JSON.parse(event.target?.result as string);
         onUpdateSettings(parsed);
       } catch (err) {
-        alert('Arquivo de configurações inválido.');
+        alert(ui.settings_arquivo_de_configuracoes_inval);
       }
     };
     reader.readAsText(file);
@@ -75,12 +75,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   // Cores de destaque pré-definidas
   const ACCENT_COLORS: { id: AccentColor; name: string; bg: string }[] = [
-    { id: 'blue', name: 'Azul', bg: 'bg-blue-600' },
-    { id: 'emerald', name: 'Esmeralda', bg: 'bg-emerald-600' },
-    { id: 'amber', name: 'Âmbar', bg: 'bg-amber-600' },
-    { id: 'rose', name: 'Rosa', bg: 'bg-rose-600' },
-    { id: 'violet', name: 'Violeta', bg: 'bg-violet-600' },
-    { id: 'cyan', name: 'Ciano', bg: 'bg-cyan-600' },
+    { id: 'blue', name: ui.settings_azul, bg: 'bg-blue-600' },
+    { id: 'emerald', name: ui.settings_esmeralda, bg: 'bg-emerald-600' },
+    { id: 'amber', name: ui.settings_ambar, bg: 'bg-amber-600' },
+    { id: 'rose', name: ui.settings_rosa, bg: 'bg-rose-600' },
+    { id: 'violet', name: ui.settings_violeta, bg: 'bg-violet-600' },
+    { id: 'cyan', name: ui.settings_ciano, bg: 'bg-cyan-600' },
   ];
 
   const getFontFamilyClass = (f: FontFamily) => {
@@ -111,7 +111,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <button
             onClick={onResetDefaults}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-            title="Restaurar valores padrão recomendados"
+            title={ui.settings_restaurar_valores_padrao_recom}
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>{t.settings.resetDefaults}</span>
@@ -120,15 +120,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <button
             onClick={handleExport}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-            title="Baixar arquivo JSON das configurações"
+            title={ui.settings_baixar_arquivo_json_das_config}
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Exportar</span>
+            <span>{ui.settings_exportar}</span>
           </button>
 
           <label className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer">
             <Upload className="w-3.5 h-3.5" />
-            <span>Importar</span>
+            <span>{ui.settings_importar}</span>
             <input
               ref={fileInputRef}
               type="file"
@@ -158,7 +158,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             lineHeight: settings.lineHeight,
           }}
         >
-          <span className="text-emerald-600 dark:text-emerald-400 font-medium">A curiosidade</span>{' '}
+          <span className="text-emerald-600 dark:text-emerald-400 font-medium">{ui.settings_a_curiosidade}</span>{' '}
           <span className="relative inline-block text-rose-600 dark:text-rose-400 font-medium bg-rose-500/15 rounded-xs">
             {settings.showWrongLetter && settings.wrongLetterStyle === 'above' && (
               <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] font-bold text-rose-600 pointer-events-none">
@@ -179,7 +179,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               }`} 
             />
           </span>{' '}
-          <span className="text-slate-400">primeiro passo para o conhecimento verdadeiro.</span>
+          <span className="text-slate-400">{ui.settings_primeiro_passo_para_o_conhecim}</span>
         </div>
       </div>
 
@@ -197,9 +197,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             {[
-              { id: 'free', label: 'Livre', desc: 'O cursor avança e o erro é marcado; corrija com Backspace.' },
-              { id: 'stop_on_error', label: 'Parar no erro', desc: 'O cursor não avança até você digitar a tecla correta.' },
-              { id: 'require_word_correction', label: 'Corrigir palavra', desc: 'O Espaço fica travado até você corrigir os erros da palavra.' },
+              { id: 'free', label: ui.settings_livre, desc: 'O cursor avança e o erro é marcado; corrija com Backspace.' },
+              { id: 'stop_on_error', label: ui.settings_parar_no_erro, desc: 'O cursor não avança até você digitar a tecla correta.' },
+              { id: 'require_word_correction', label: ui.settings_corrigir_palavra, desc: 'O Espaço fica travado até você corrigir os erros da palavra.' },
             ].map((opt) => (
               <button
                 key={opt.id}
@@ -257,7 +257,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <label className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/60 cursor-pointer">
             <div>
               <span className="font-semibold text-slate-800 dark:text-slate-200 block">
-                Pontuação em palavras comuns
+                {t.settings.includePunctuationInWords}
               </span>
               <span className="text-[11px] text-slate-400">
                 Gera maiúsculas e vírgulas/pontos no modo de palavras frequentes.
@@ -270,6 +270,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               className="w-4 h-4 accent-blue-600 rounded cursor-pointer"
             />
           </label>
+
+          {settings.language === 'es' && (
+            <label className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/60 cursor-pointer">
+              <div>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 block">
+                  {t.settings.omitInvertedMarks}
+                </span>
+                <span className="text-[11px] text-slate-400">
+                  {t.settings.omitInvertedMarksDesc}
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.omitInvertedMarks}
+                onChange={(e) => onUpdateSettings({ omitInvertedMarks: e.target.checked })}
+                className="w-4 h-4 accent-blue-600 rounded cursor-pointer"
+              />
+            </label>
+          )}
 
           <ShortcutsInfo />
 
@@ -348,10 +367,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     type="button"
                     onClick={() => soundService.testKeySound(settings.keySoundProfile || 'mechanical')}
                     className="flex items-center gap-1 text-[11px] font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 cursor-pointer"
-                    title="Ouvir amostra do som da tecla"
+                    title={ui.settings_ouvir_amostra_do_som_da_tecla}
                   >
                     <Play className="w-3 h-3 fill-current" />
-                    <span>Testar</span>
+                    <span>{ui.settings_testar}</span>
                   </button>
                 </div>
                 <select
@@ -364,9 +383,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   }}
                   className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-800 dark:text-slate-200 outline-none"
                 >
-                  <option value="mechanical">Mecânico (Thock autêntico)</option>
-                  <option value="clicky">Clicky (Click agudo nítido)</option>
-                  <option value="membrane">Suave / Membrana (Discreto)</option>
+                  <option value="mechanical">{ui.settings_mecanico_thock_autentico}</option>
+                  <option value="clicky">{ui.settings_clicky_click_agudo_nitido}</option>
+                  <option value="membrane">{ui.settings_suave_membrana_discreto}</option>
                 </select>
               </div>
 
@@ -380,10 +399,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     type="button"
                     onClick={() => soundService.testErrorSound(settings.errorSoundProfile || 'buzzer')}
                     className="flex items-center gap-1 text-[11px] font-medium text-rose-600 hover:text-rose-700 dark:text-rose-400 cursor-pointer"
-                    title="Ouvir amostra do som de erro"
+                    title={ui.settings_ouvir_amostra_do_som_de_erro}
                   >
                     <Play className="w-3 h-3 fill-current" />
-                    <span>Testar</span>
+                    <span>{ui.settings_testar}</span>
                   </button>
                 </div>
                 <select
@@ -396,9 +415,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   }}
                   className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-800 dark:text-slate-200 outline-none"
                 >
-                  <option value="buzzer">Buzzer (Grave descendente - padrão)</option>
-                  <option value="descending_beep">Bipe Duplo Descendente (440Hz → 330Hz)</option>
-                  <option value="dry_knock">Toc Seco (Percussivo curto)</option>
+                  <option value="buzzer">{ui.settings_buzzer_grave_descendente_padra}</option>
+                  <option value="descending_beep">{ui.settings_bipe_duplo_descendente_440hz_3}</option>
+                  <option value="dry_knock">{ui.settings_toc_seco_percussivo_curto}</option>
                 </select>
               </div>
 
@@ -409,7 +428,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               {/* Volume Geral */}
               <div>
                 <div className="flex justify-between text-xs text-slate-500 mb-1">
-                  <span>Volume Geral</span>
+                  <span>{ui.settings_volume_geral}</span>
                   <span className="font-mono">{Math.round((settings.volume ?? 0.5) * 100)}%</span>
                 </div>
                 <input
@@ -426,7 +445,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               {/* Volume Teclas */}
               <div>
                 <div className="flex justify-between text-xs text-slate-500 mb-1">
-                  <span>Volume das Teclas</span>
+                  <span>{ui.settings_volume_das_teclas}</span>
                   <span className="font-mono">{Math.round((settings.keyVolume ?? 0.7) * 100)}%</span>
                 </div>
                 <input
@@ -443,7 +462,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               {/* Volume Erro */}
               <div>
                 <div className="flex justify-between text-xs text-slate-500 mb-1">
-                  <span>Volume do Erro</span>
+                  <span>{ui.settings_volume_do_erro}</span>
                   <span className="font-mono">{Math.round((settings.errorVolume ?? 1.0) * 100)}%</span>
                 </div>
                 <input
@@ -493,10 +512,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 }}
                 className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-800 dark:text-slate-200 outline-none"
               >
-                <option value="jump">Salto animado (Padrão — flutua e sobe)</option>
-                <option value="replace">Substituição temporária na linha</option>
-                <option value="above">Pequena flutuante acima</option>
-                <option value="off">Desativado (somente cor/fundo)</option>
+                <option value="jump">{ui.settings_salto_animado_padrao_flutua_e_}</option>
+                <option value="replace">{ui.settings_substituicao_temporaria_na_lin}</option>
+                <option value="above">{ui.settings_pequena_flutuante_acima}</option>
+                <option value="off">{ui.settings_desativado_somente_cor_fundo}</option>
               </select>
             </div>
 
@@ -644,9 +663,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { id: 'sans', label: 'Sem serifa', font: 'font-sans' },
-                { id: 'mono', label: 'Mono', font: 'font-mono' },
-                { id: 'serif', label: 'Serifa', font: 'font-serif' },
+                { id: 'sans', label: ui.settings_sem_serifa, font: 'font-sans' },
+                { id: 'mono', label: ui.settings_mono, font: 'font-mono' },
+                { id: 'serif', label: ui.settings_serifa, font: 'font-serif' },
               ].map((f) => (
                 <button
                   key={f.id}
@@ -697,12 +716,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </label>
             <div className="grid grid-cols-6 gap-2">
               {[
-                { id: 'blue', label: 'Azul', bg: 'bg-blue-600' },
-                { id: 'emerald', label: 'Esmeralda', bg: 'bg-emerald-600' },
-                { id: 'violet', label: 'Violeta', bg: 'bg-violet-600' },
-                { id: 'amber', label: 'Âmbar', bg: 'bg-amber-600' },
-                { id: 'rose', label: 'Rosa', bg: 'bg-rose-600' },
-                { id: 'cyan', label: 'Ciano', bg: 'bg-cyan-600' },
+                { id: 'blue', label: ui.settings_azul, bg: 'bg-blue-600' },
+                { id: 'emerald', label: ui.settings_esmeralda, bg: 'bg-emerald-600' },
+                { id: 'violet', label: ui.settings_violeta, bg: 'bg-violet-600' },
+                { id: 'amber', label: ui.settings_ambar, bg: 'bg-amber-600' },
+                { id: 'rose', label: ui.settings_rosa, bg: 'bg-rose-600' },
+                { id: 'cyan', label: ui.settings_ciano, bg: 'bg-cyan-600' },
               ].map((acc) => (
                 <button
                   key={acc.id}
@@ -727,7 +746,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           
           <div>
             <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              <span>Tamanho da Fonte</span>
+              <span>{ui.settings_tamanho_da_fonte}</span>
               <span>{settings.fontSize}px</span>
             </div>
             <input
@@ -743,7 +762,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <div>
             <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              <span>Altura da Linha</span>
+              <span>{ui.settings_altura_da_linha}</span>
               <span>{settings.lineHeight}</span>
             </div>
             <input
@@ -759,7 +778,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <div>
             <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              <span>Linhas Visíveis</span>
+              <span>{ui.settings_linhas_visiveis}</span>
               <span>{settings.visibleLines} linhas</span>
             </div>
             <input
@@ -781,7 +800,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs space-y-4 text-xs">
         <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <Zap className="w-4 h-4 text-amber-500" />
-          <span>Opções de Estudo & Recursos Adicionais</span>
+          <span>{ui.settings_opcoes_de_estudo_recursos_adic}</span>
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -859,7 +878,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 space-y-3 text-xs">
         <h3 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
           <Keyboard className="w-4 h-4 text-blue-500" />
-          <span>Atalhos de Teclado Rápidos</span>
+          <span>{ui.settings_atalhos_de_teclado_rapidos}</span>
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
           {t.settings.shortcutsList.map((sc, i) => (

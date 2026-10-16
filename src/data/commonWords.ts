@@ -1,3 +1,5 @@
+import { COMMON_ENGLISH_WORDS } from './commonWordsEn';
+import { COMMON_SPANISH_WORDS } from './commonWordsEs';
 /**
  * Lista das palavras mais frequentes da língua portuguesa (pt-BR)
  */
@@ -53,14 +55,16 @@ export const COMMON_PORTUGUESE_WORDS: string[] = [
  */
 export function generateCommonWordsText(
   wordCount: number,
-  includePunctuation: boolean = false
+  includePunctuation: boolean = false,
+  lang: string = 'pt'
 ): string {
+  const wordsPool = getCommonWords(lang);
   const result: string[] = [];
   const punctuationMarks = ['.', ',', '?', ':', ';'];
 
   for (let i = 0; i < wordCount; i++) {
-    const randomIndex = Math.floor(Math.random() * COMMON_PORTUGUESE_WORDS.length);
-    let word = COMMON_PORTUGUESE_WORDS[randomIndex];
+    const randomIndex = Math.floor(Math.random() * wordsPool.length);
+    let word = wordsPool[randomIndex];
 
     if (includePunctuation) {
       // Começo de frase com maiúscula
@@ -88,8 +92,10 @@ export function generateCommonWordsText(
 /**
  * Gera sequência repetida do alfabeto
  */
-export function generateAlphabetText(repetitions: number = 3): string {
-  const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+export function generateAlphabetText(repetitions: number = 3, lang: string = 'pt'): string {
+  const alphabet = lang.startsWith('es') 
+    ? 'abcdefghijklmnñopqrstuvwxyz' 
+    : 'abcdefghijklmnopqrstuvwxyz';
   return Array(repetitions).fill(alphabet).join(' ');
 }
 
@@ -107,4 +113,13 @@ export function generateNumbersText(groupsCount: number = 25): string {
     groups.push(num);
   }
   return groups.join(' ');
+}
+
+/**
+ * Retorna as palavras mais comuns para o idioma informado.
+ */
+export function getCommonWords(lang: string = 'pt'): string[] {
+  if (lang.startsWith('en')) return COMMON_ENGLISH_WORDS;
+  if (lang.startsWith('es')) return COMMON_SPANISH_WORDS;
+  return COMMON_PORTUGUESE_WORDS;
 }

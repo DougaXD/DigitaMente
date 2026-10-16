@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Play, FileText, Check } from 'lucide-react';
 import { normalizeText } from '../../utils/textNormalizer';
-import { t } from '../../i18n';
+import { t , ui } from '../../i18n';
 
 interface CustomTextModalProps {
   isOpen: boolean;
@@ -56,7 +56,7 @@ export const CustomTextModal: React.FC<CustomTextModalProps> = ({
               rows={5}
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
-              placeholder="Cole aqui seu parágrafo, artigo ou anotação para praticar..."
+              placeholder={ui.custom_text_cole_aqui_seu_paragrafo_artigo}
               className="w-full p-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none resize-none"
               autoFocus
             />
